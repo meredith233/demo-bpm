@@ -1,0 +1,40 @@
+server:
+  port: 8081
+
+# Spring 相关配置
+spring:
+  # 数据源配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://81.69.245.27:10081/bpm-demo?serverTimezone=GMT%2B8
+    username: bpm-demo
+    password: xFaEkwmGDs686FSG
+  redis:
+    host: 81.69.245.27
+    port: 10091
+    timeout: 10000
+    database: 0
+    lettuce:
+      pool:
+        max-active: 300
+        max-idle: 100
+        max-wait: -1
+        min-idle: 20
+      shutdown-timeout: 10000
+  data:
+    mongodb:
+      uri: mongodb://81.69.245.27:10093/bpm-demo
+
+
+# MyBatis Plus 相关配置
+mybatis-plus:
+  configuration:
+    default-enum-type-handler: com.baomidou.mybatisplus.extension.handlers.MybatisEnumTypeHandler
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: classpath*:/mapper/*Mapper.xml,classpath*:/mapper/**/*Mapper.xml
+  global-config:
+    banner: false
+    db-config:
+      id-type: assign_id
+      logic-delete-value: 1
+      logic-not-delete-value: 0
