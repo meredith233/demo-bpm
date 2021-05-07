@@ -9,7 +9,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import top.mrexgo.demobpm.core.dto.AuditReqDTO;
 import top.mrexgo.demobpm.core.entity.BpmProcess;
+import top.mrexgo.demobpm.core.entity.BpmProcessNode;
 import top.mrexgo.demobpm.core.service.ProcessService;
+
+import java.util.List;
 
 /**
  * @author liangjuhong
@@ -35,5 +38,10 @@ public class ProcessController {
     @GetMapping("/{id}")
     public BpmProcess listAuditNodes(@PathVariable("id") Long id) {
         return processService.listAuditNodes(id);
+    }
+
+    @GetMapping("/items")
+    public List<BpmProcessNode> listFirstLevelNodes() {
+        return null;
     }
 }

@@ -80,8 +80,6 @@ public class ProcessServiceImpl implements ProcessService {
             default:
         }
         mongoDAO.saveProcess(p);
-
-        // 审核通过后，对下一节点进行预处理
     }
 
     @Override
