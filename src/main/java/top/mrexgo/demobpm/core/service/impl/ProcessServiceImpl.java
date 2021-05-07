@@ -59,7 +59,6 @@ public class ProcessServiceImpl implements ProcessService {
                     if (endFlag) {
                         // 流程审核结束
                         p.setStatus(NodeStatusEnum.COMPLETE);
-                        mongoDAO.saveProcess(p);
                     }
                 }
                 break;
@@ -73,7 +72,7 @@ public class ProcessServiceImpl implements ProcessService {
                 break;
             default:
         }
-
+        mongoDAO.saveProcess(p);
 
         // 审核通过后，对下一节点进行预处理
     }
@@ -147,6 +146,8 @@ public class ProcessServiceImpl implements ProcessService {
                 cur.setFinished(cur.getFinished() + 1);
                 if (cur.getFinished().equals(cur.getAllNeedFinish())) {
                     // 当前节点所需审核子节点全部审核完成
+                    cur.setNodeStatus(NodeStatusEnum.COMPLETE);
+                    skipRest(cur);
                     return true;
                 } else {
                     if (NodeTypeEnum.SERIAL.equals(cur.getNodeType())) {
@@ -156,6 +157,36 @@ public class ProcessServiceImpl implements ProcessService {
                 }
             }
             return false;
+        }
+    }
+
+    private void skipRest(BpmProcessNode cur) {
+        if (NodeTypeEnum.PARALLEL.equals(cur.getNodeType())) {
+            for (BpmProcessNode node : cur.getNodes()) {
+                doSkip(node);
+            }
+        }
+    }
+
+    private void doSkip(BpmProcessNode node) {
+        if (NodeStatusEnum.COMPLETE.equals(node.getNodeStatus()) || NodeStatusEnum.SKIP.equals(node.getNodeStatus())) {
+            return;
+        }
+        switch (node.getNodeType()) {
+            case SERIAL:
+            case PARALLEL:
+            case COUNTERSIGN:
+                node.setNodeStatus(NodeStatusEnum.SKIP);
+                for (BpmProcessNode next : node.getNodes()) {
+                    doSkip(next);
+                }
+                break;
+            case CONDITION:
+                break;
+            case NORMAL:
+                node.setNodeStatus(NodeStatusEnum.SKIP);
+                break;
+            default:
         }
     }
 
@@ -235,6 +266,7 @@ public class ProcessServiceImpl implements ProcessService {
             BpmProcessNode node = nodes.get(i);
             List<Integer> newLoc = new ArrayList<>(loc);
             node.setLocation(Base32Utils.base32ToString(JSONUtil.toJsonStr(newLoc)));
+            node.setFinished(0);
             if (CollectionUtils.isNotEmpty(node.getNodes())) {
                 initLocation(node.getNodes(), newLoc);
             }
