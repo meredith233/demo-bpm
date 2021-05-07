@@ -20,7 +20,8 @@ public enum NodeStatusEnum {
     COMPLETE(2, "审批完成"),
     FUTURE(3, "未到达该审批节点"),
     WAITING(4, "等待子节点审批"),
-    SKIP(5, "跳过审批");
+    SKIP(5, "跳过审批"),
+    NO_PASS(6, "不通过");
 
     private Integer key;
     private String value;

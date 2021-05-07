@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import org.springframework.data.mongodb.core.mapping.MongoId;
 import top.mrexgo.demobpm.common.enums.NodeStatusEnum;
 import top.mrexgo.demobpm.common.enums.NodeTypeEnum;
 
@@ -22,6 +23,7 @@ import java.util.List;
 @NoArgsConstructor
 public class ProcessNode implements Serializable {
 
+    @MongoId
     private Long nodeId;
 
     /**

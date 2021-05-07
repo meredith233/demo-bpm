@@ -3,6 +3,7 @@ package top.mrexgo.demobpm.persistent.dao.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Component;
+import top.mrexgo.demobpm.core.entity.Process;
 import top.mrexgo.demobpm.persistent.dao.ProcessMongoDAO;
 
 /**
@@ -14,4 +15,14 @@ import top.mrexgo.demobpm.persistent.dao.ProcessMongoDAO;
 public class ProcessMongoDAOImpl implements ProcessMongoDAO {
 
     private final MongoTemplate template;
+
+    @Override
+    public void saveProcess(Process process) {
+        template.save(process);
+    }
+
+    @Override
+    public Process getProcess(Long processId) {
+        return template.findById(processId, Process.class);
+    }
 }
