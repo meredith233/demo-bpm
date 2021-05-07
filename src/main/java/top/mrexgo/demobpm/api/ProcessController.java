@@ -1,8 +1,12 @@
 package top.mrexgo.demobpm.api;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import top.mrexgo.demobpm.core.dto.AuditReqDTO;
 import top.mrexgo.demobpm.core.service.ProcessService;
 
 /**
@@ -13,6 +17,16 @@ import top.mrexgo.demobpm.core.service.ProcessService;
 @RequestMapping("/process")
 @RequiredArgsConstructor
 public class ProcessController {
-    
+
     private final ProcessService processService;
+
+    @GetMapping
+    public void start() {
+        processService.startProcess();
+    }
+
+    @PostMapping("/audit")
+    public void audit(@RequestBody AuditReqDTO dto) {
+        processService.audit(dto);
+    }
 }
