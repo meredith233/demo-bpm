@@ -21,7 +21,7 @@ import java.util.List;
 @Accessors(chain = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProcessNode implements Serializable {
+public class BpmProcessNode implements Serializable {
 
     @MongoId
     private Long nodeId;
@@ -71,5 +71,5 @@ public class ProcessNode implements Serializable {
     /**
      * 子节点（可为空）
      */
-    private List<ProcessNode> nodes;
+    private List<BpmProcessNode> nodes;
 }

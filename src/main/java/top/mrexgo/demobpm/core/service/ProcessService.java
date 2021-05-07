@@ -1,6 +1,7 @@
 package top.mrexgo.demobpm.core.service;
 
 import top.mrexgo.demobpm.core.dto.AuditReqDTO;
+import top.mrexgo.demobpm.core.entity.BpmProcess;
 
 /**
  * @author liangjuhong
@@ -10,4 +11,6 @@ public interface ProcessService {
     void startProcess();
 
     void audit(AuditReqDTO dto);
+
+    BpmProcess listAuditNodes();
 }

@@ -29,4 +29,8 @@ public class ProcessController {
     public void audit(@RequestBody AuditReqDTO dto) {
         processService.audit(dto);
     }
+
+    public void listAuditNodes() {
+        processService.listAuditNodes();
+    }
 }

@@ -18,7 +18,7 @@ import java.util.List;
 @Accessors(chain = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class Process {
+public class BpmProcess {
 
     @MongoId
     private Long processId;
@@ -47,5 +47,5 @@ public class Process {
      * 流程节点
      * 这个流程类相当于一个串行节点，这样可以少套一层
      */
-    private List<ProcessNode> nodes;
+    private List<BpmProcessNode> nodes;
 }
