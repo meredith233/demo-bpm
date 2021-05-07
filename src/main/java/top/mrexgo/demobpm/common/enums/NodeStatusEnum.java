@@ -1,8 +1,14 @@
 package top.mrexgo.demobpm.common.enums;
 
+import com.baomidou.mybatisplus.annotation.EnumValue;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.Arrays;
+import java.util.Map;
 
 /**
  * @author liangjuhong
@@ -11,6 +17,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum NodeStatusEnum {
 
     /**
@@ -23,6 +30,23 @@ public enum NodeStatusEnum {
     SKIP(5, "跳过审批"),
     NO_PASS(6, "不通过");
 
-    private Integer key;
-    private String value;
+    @EnumValue
+    private Integer value;
+    private String label;
+
+    @JsonCreator
+    public static NodeStatusEnum fromValue(Object type) {
+        if (type instanceof Integer) {
+            return Arrays.stream(NodeStatusEnum.values())
+                .filter(typeEnum -> typeEnum.getValue().equals(type))
+                .findFirst().orElse(null);
+        } else if (type instanceof Map) {
+            Map baseEnum = (Map) type;
+            return Arrays.stream(NodeStatusEnum.values())
+                .filter(typeEnum -> typeEnum.getValue().equals(baseEnum.get("value")))
+                .findFirst().orElse(null);
+        }
+        return null;
+    }
+
 }
