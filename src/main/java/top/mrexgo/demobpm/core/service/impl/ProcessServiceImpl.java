@@ -326,6 +326,8 @@ public class ProcessServiceImpl implements ProcessService {
         BpmProcess template = init(null);
         cur.setNodes(cur.getNodes().subList(0, cur.getCurrentNode()));
         cur.getNodes().addAll(template.getNodes().subList(dto.getRollbackTo(), template.getNodes().size() - 1));
+        cur.setCurrentNode(cur.getCurrentNode() + 1);
+        readyNode(cur.getNodes().get(cur.getCurrentNode()));
     }
 
     /**
