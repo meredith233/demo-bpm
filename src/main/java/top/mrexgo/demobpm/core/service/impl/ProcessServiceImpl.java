@@ -235,16 +235,16 @@ public class ProcessServiceImpl implements ProcessService {
         nodes.add(BpmProcessNode.builder().nodeId(2L).nodeName("节点1").nodeStatus(NodeStatusEnum.READY).nodeType(NodeTypeEnum.NORMAL).build());
         nodes.add(BpmProcessNode.builder().nodeId(3L).nodeName("节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
         // 子节点有一个审核通过即通过
-        nodes.add(BpmProcessNode.builder().nodeId(4L).nodeName("并行节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.PARALLEL).allNeedFinish(1).nodes(new ArrayList<BpmProcessNode>() {{
+        nodes.add(BpmProcessNode.builder().nodeId(4L).nodeName("并行节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.PARALLEL).nodes(new ArrayList<BpmProcessNode>() {{
             add(BpmProcessNode.builder().nodeId(41L).nodeName("并行1节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
             add(BpmProcessNode.builder().nodeId(42L).nodeName("并行1节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-            add(BpmProcessNode.builder().nodeId(43L).nodeName("并行1串行1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.SERIAL).allNeedFinish(2).nodes(new ArrayList<BpmProcessNode>() {{
+            add(BpmProcessNode.builder().nodeId(43L).nodeName("并行1串行1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.SERIAL).nodes(new ArrayList<BpmProcessNode>() {{
                 add(BpmProcessNode.builder().nodeId(51L).nodeName("并行1串行1节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
                 add(BpmProcessNode.builder().nodeId(52L).nodeName("并行1串行1节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
             }}).build());
         }}).build());
         // 所有子节点通过才通过
-        nodes.add(BpmProcessNode.builder().nodeId(5L).nodeName("会签节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.COUNTERSIGN).allNeedFinish(2).nodes(new ArrayList<BpmProcessNode>() {{
+        nodes.add(BpmProcessNode.builder().nodeId(5L).nodeName("会签节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.COUNTERSIGN).nodes(new ArrayList<BpmProcessNode>() {{
             add(BpmProcessNode.builder().nodeId(51L).nodeName("会签1节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
             add(BpmProcessNode.builder().nodeId(52L).nodeName("会签1节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
         }}).build());
