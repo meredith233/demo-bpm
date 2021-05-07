@@ -63,10 +63,14 @@ public class ProcessServiceImpl implements ProcessService {
                 }
                 break;
             case NO_PASS:
+                p.setStatus(NodeStatusEnum.NO_PASS);
+                this.handleNoPassNode(cur, 1, dto.getProcessNodeLocation().size(), dto);
                 break;
             case ROLLBACK:
                 break;
             case TRANSPORT:
+                // 判断当前审批节点父节点是否为会签节点，如果是则直接在父节点添加一个子节点，否则将当前节点改为会签节点
+                handleTransportNode(cur, null, 1, dto.getProcessNodeLocation().size(), dto);
                 break;
             case RE_LUNCH:
                 break;
@@ -160,8 +164,82 @@ public class ProcessServiceImpl implements ProcessService {
         }
     }
 
+    private void handleNoPassNode(BpmProcessNode cur, int i, int size, AuditReqDTO dto) {
+        if (i == size) {
+            // 到达最终节点位置
+            if (!NodeTypeEnum.NORMAL.equals(cur.getNodeType()) || !dto.getProcessNodeId().equals(cur.getNodeId())) {
+                // 未到达叶子节点
+                throw new RuntimeException("审核节点错误");
+            }
+            cur.setNodeStatus(NodeStatusEnum.NO_PASS).setAuditMsg(dto.getAuditMsg());
+        } else {
+            int pos = dto.getProcessNodeLocation().get(i);
+            BpmProcessNode next = cur.getNodes().get(pos);
+            handleNoPassNode(next, i + 1, size, dto);
+            cur.setNodeStatus(NodeStatusEnum.NO_PASS);
+            skipRest(cur);
+        }
+    }
+
+    private void handleTransportNode(BpmProcessNode cur, BpmProcessNode parent, int i, int size, AuditReqDTO dto) {
+        if (i == size) {
+            // 到达最终节点位置
+            if (!NodeTypeEnum.NORMAL.equals(cur.getNodeType()) || !dto.getProcessNodeId().equals(cur.getNodeId())) {
+                // 未到达叶子节点
+                throw new RuntimeException("审核节点错误");
+            }
+            BpmProcessNode generated = BpmProcessNode.builder()
+                .nodeId(111L)
+                .nodeName(cur.getNodeName())
+                .nodeType(NodeTypeEnum.NORMAL)
+                .nodeStatus(NodeStatusEnum.READY).build();
+            if (parent == null || !NodeTypeEnum.COUNTERSIGN.equals(parent.getNodeType())) {
+                // 转换当前节点为会签节点
+                cur.setNodeType(NodeTypeEnum.COUNTERSIGN)
+                    .setNodeStatus(NodeStatusEnum.WAITING)
+                    .setNodes(new ArrayList<>())
+                    .setFinished(0);
+
+                List<Integer> anotherLoc = new ArrayList<>(dto.getProcessNodeLocation());
+                anotherLoc.add(0);
+                BpmProcessNode another = BpmProcessNode.builder()
+                    .nodeId(112L)
+                    .nodeName(cur.getNodeName())
+                    .nodeType(NodeTypeEnum.NORMAL)
+                    .nodeStatus(NodeStatusEnum.READY)
+                    .location(Base32Utils.base32ToString(JSONUtil.toJsonStr(anotherLoc))).build();
+                cur.getNodes().add(another);
+
+                List<Integer> generatedLoc = new ArrayList<>(dto.getProcessNodeLocation());
+                generatedLoc.add(1);
+                generated.setLocation(Base32Utils.base32ToString(JSONUtil.toJsonStr(generatedLoc)));
+                cur.getNodes().add(generated);
+                if (dto.getNeedAuditFlag()) {
+                    cur.setAllNeedFinish(2);
+                } else {
+                    cur.setAllNeedFinish(1);
+                }
+            } else {
+                // 为父节点添加一个子节点
+                parent.getNodes().add(generated);
+                dto.getProcessNodeLocation().remove(dto.getProcessNodeLocation().size() - 1);
+                dto.getProcessNodeLocation().add(parent.getNodes().size() - 1);
+                generated.setLocation(Base32Utils.base32ToString(JSONUtil.toJsonStr(dto.getProcessNodeLocation())));
+                if (dto.getNeedAuditFlag()) {
+                    parent.setAllNeedFinish(parent.getAllNeedFinish() + 1);
+                } else {
+                    cur.setNodeStatus(NodeStatusEnum.SKIP);
+                }
+            }
+        } else {
+            int pos = dto.getProcessNodeLocation().get(i);
+            BpmProcessNode next = cur.getNodes().get(pos);
+            handleTransportNode(next, cur, i + 1, size, dto);
+        }
+    }
+
     private void skipRest(BpmProcessNode cur) {
-        if (NodeTypeEnum.PARALLEL.equals(cur.getNodeType())) {
+        if (!NodeTypeEnum.NORMAL.equals(cur.getNodeType())) {
             for (BpmProcessNode node : cur.getNodes()) {
                 doSkip(node);
             }

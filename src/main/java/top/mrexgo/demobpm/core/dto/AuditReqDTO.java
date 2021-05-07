@@ -40,6 +40,11 @@ public class AuditReqDTO implements Serializable {
     private Long transportTo;
 
     /**
+     * 转发审批时使用，当前人是否需要还审批
+     */
+    private Boolean needAuditFlag;
+
+    /**
      * 驳回时使用
      * 驳回到指定节点
      */
