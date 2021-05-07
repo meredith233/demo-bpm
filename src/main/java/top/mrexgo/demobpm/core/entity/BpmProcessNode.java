@@ -53,7 +53,7 @@ public class BpmProcessNode implements Serializable {
     private String condition;
 
     /**
-     * 以下两个参数仅 条件节点 有效
+     * 以下两个参数仅 有子节点的节点 有效
      * 已审核完成子节点
      */
     private Integer finished;

@@ -252,7 +252,33 @@ public class ProcessServiceImpl implements ProcessService {
         bpmProcess.setNodes(nodes);
 
         initLocation(bpmProcess);
+        calAllNeedFinish(bpmProcess);
         return bpmProcess;
+    }
+
+    private void calAllNeedFinish(BpmProcess bpmProcess) {
+        for (BpmProcessNode node : bpmProcess.getNodes()) {
+            calAllNeedFinish(node);
+        }
+    }
+
+    private void calAllNeedFinish(BpmProcessNode bpmProcessNode) {
+        switch (bpmProcessNode.getNodeType()) {
+            case SERIAL:
+            case COUNTERSIGN:
+                bpmProcessNode.setAllNeedFinish(bpmProcessNode.getNodes().size());
+                for (BpmProcessNode next : bpmProcessNode.getNodes()) {
+                    calAllNeedFinish(next);
+                }
+                break;
+            case PARALLEL:
+                bpmProcessNode.setAllNeedFinish(1);
+                for (BpmProcessNode next : bpmProcessNode.getNodes()) {
+                    calAllNeedFinish(next);
+                }
+                break;
+            default:
+        }
     }
 
     private void initLocation(BpmProcess bpmProcess) {
