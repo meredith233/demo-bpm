@@ -7,7 +7,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import top.mrexgo.demobpm.core.dto.AuditReqDTO;
+import top.mrexgo.demobpm.core.entity.BpmProcess;
 import top.mrexgo.demobpm.core.service.ProcessService;
+
+import javax.websocket.server.PathParam;
 
 /**
  * @author liangjuhong
@@ -30,7 +33,8 @@ public class ProcessController {
         processService.audit(dto);
     }
 
-    public void listAuditNodes() {
-        processService.listAuditNodes();
+    @GetMapping("/{id}")
+    public BpmProcess listAuditNodes(@PathParam("id") Long id) {
+        return processService.listAuditNodes(id);
     }
 }

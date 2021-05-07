@@ -12,5 +12,5 @@ public interface ProcessService {
 
     void audit(AuditReqDTO dto);
 
-    BpmProcess listAuditNodes();
+    BpmProcess listAuditNodes(Long id);
 }

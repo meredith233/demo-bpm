@@ -79,8 +79,44 @@ public class ProcessServiceImpl implements ProcessService {
     }
 
     @Override
-    public BpmProcess listAuditNodes() {
-        return null;
+    public BpmProcess listAuditNodes(Long id) {
+        BpmProcess p = mongoDAO.getProcess(id);
+        List<BpmProcessNode> auditNodes = new ArrayList<>();
+        findAuditNodes(p, auditNodes);
+        p.setNodes(auditNodes);
+        return p;
+    }
+
+    private void findAuditNodes(BpmProcess p, List<BpmProcessNode> auditNodes) {
+        int pos = p.getCurrentNode();
+        BpmProcessNode node = p.getNodes().get(pos);
+        if (NodeStatusEnum.READY.equals(node.getNodeStatus()) || NodeStatusEnum.WAITING.equals(node.getNodeStatus())) {
+            findAuditNodes(node, auditNodes);
+        } else {
+            // 不在审核状态
+            throw new RuntimeException("审核状态异常");
+        }
+    }
+
+    private void findAuditNodes(BpmProcessNode node, List<BpmProcessNode> auditNodes) {
+        switch (node.getNodeType()) {
+            case SERIAL:
+            case PARALLEL:
+            case COUNTERSIGN:
+                for (int i = 0; i < node.getNodes().size(); i++) {
+                    BpmProcessNode now = node.getNodes().get(i);
+                    if (NodeStatusEnum.READY.equals(now.getNodeStatus()) || NodeStatusEnum.WAITING.equals(now.getNodeStatus())) {
+                        findAuditNodes(now, auditNodes);
+                    }
+                }
+                break;
+            case CONDITION:
+                break;
+            case NORMAL:
+                auditNodes.add(node);
+                break;
+            default:
+        }
     }
 
     /**
