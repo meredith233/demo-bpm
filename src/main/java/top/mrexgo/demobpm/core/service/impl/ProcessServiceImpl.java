@@ -1,10 +1,12 @@
 package top.mrexgo.demobpm.core.service.impl;
 
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import top.mrexgo.demobpm.common.enums.NodeStatusEnum;
 import top.mrexgo.demobpm.common.enums.NodeTypeEnum;
+import top.mrexgo.demobpm.common.utils.Base32Utils;
 import top.mrexgo.demobpm.core.dto.AuditReqDTO;
 import top.mrexgo.demobpm.core.entity.Process;
 import top.mrexgo.demobpm.core.entity.ProcessNode;
@@ -37,6 +39,7 @@ public class ProcessServiceImpl implements ProcessService {
             // 流程不在审批状态
             throw new RuntimeException("流程无法审批");
         }
+        dto.initLocation();
         if (CollectionUtils.isEmpty(dto.getProcessNodeLocation())) {
             // 没有定位信息，报错
             throw new RuntimeException("没有节点定位信息");
@@ -52,7 +55,12 @@ public class ProcessServiceImpl implements ProcessService {
                 boolean passFlag = this.handleSuccessNode(cur, 1, dto.getProcessNodeLocation().size(), dto);
                 if (passFlag) {
                     p.setCurrentNode(p.getCurrentNode() + 1);
-                    readyNode(p.getNodes().get(p.getCurrentNode()));
+                    boolean endFlag = readyNode(p.getNodes().get(p.getCurrentNode()));
+                    if (endFlag) {
+                        // 流程审核结束
+                        p.setStatus(NodeStatusEnum.COMPLETE);
+                        mongoDAO.saveProcess(p);
+                    }
                 }
                 break;
             case NO_PASS:
@@ -110,7 +118,7 @@ public class ProcessServiceImpl implements ProcessService {
         }
     }
 
-    private void readyNode(ProcessNode node) {
+    private boolean readyNode(ProcessNode node) {
         if (!NodeStatusEnum.FUTURE.equals(node.getNodeStatus())) {
             // 初始化状态错误
             throw new RuntimeException("下一节点初始化失败");
@@ -135,9 +143,13 @@ public class ProcessServiceImpl implements ProcessService {
                 break;
             case NORMAL:
                 node.setNodeStatus(NodeStatusEnum.READY);
-                return;
+                break;
+            case END:
+                node.setNodeStatus(NodeStatusEnum.COMPLETE);
+                return true;
             default:
         }
+        return false;
     }
 
     /**
@@ -154,7 +166,7 @@ public class ProcessServiceImpl implements ProcessService {
         nodes.add(ProcessNode.builder().nodeId(4L).nodeName("并行节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.PARALLEL).allNeedFinish(1).nodes(new ArrayList<ProcessNode>() {{
             add(ProcessNode.builder().nodeId(41L).nodeName("并行1节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
             add(ProcessNode.builder().nodeId(42L).nodeName("并行1节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-            add(ProcessNode.builder().nodeId(43L).nodeName("并行1串行1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.SERIAL).nodes(new ArrayList<ProcessNode>() {{
+            add(ProcessNode.builder().nodeId(43L).nodeName("并行1串行1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.SERIAL).allNeedFinish(2).nodes(new ArrayList<ProcessNode>() {{
                 add(ProcessNode.builder().nodeId(51L).nodeName("并行1串行1节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
                 add(ProcessNode.builder().nodeId(52L).nodeName("并行1串行1节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
             }}).build());
@@ -166,6 +178,26 @@ public class ProcessServiceImpl implements ProcessService {
         }}).build());
         nodes.add(ProcessNode.builder().nodeId(99L).nodeName("结束节点").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.END).build());
         process.setNodes(nodes);
+
+        initLocation(process);
         return process;
+    }
+
+    private void initLocation(Process process) {
+        List<Integer> loc = new ArrayList<>();
+        initLocation(process.getNodes(), loc);
+    }
+
+    private void initLocation(List<ProcessNode> nodes, List<Integer> loc) {
+        for (int i = 0; i < nodes.size(); i++) {
+            loc.add(i);
+            ProcessNode node = nodes.get(i);
+            List<Integer> newLoc = new ArrayList<>(loc);
+            node.setLocation(Base32Utils.base32ToString(JSONUtil.toJsonStr(newLoc)));
+            if (CollectionUtils.isNotEmpty(node.getNodes())) {
+                initLocation(node.getNodes(), newLoc);
+            }
+            loc.remove(loc.size() - 1);
+        }
     }
 }

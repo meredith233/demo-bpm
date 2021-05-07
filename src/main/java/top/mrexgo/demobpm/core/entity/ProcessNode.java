@@ -64,6 +64,11 @@ public class ProcessNode implements Serializable {
     private Integer allNeedFinish;
 
     /**
+     * 节点定位值
+     */
+    private String location;
+
+    /**
      * 子节点（可为空）
      */
     private List<ProcessNode> nodes;

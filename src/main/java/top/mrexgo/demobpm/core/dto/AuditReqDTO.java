@@ -1,9 +1,11 @@
 package top.mrexgo.demobpm.core.dto;
 
+import cn.hutool.json.JSONUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import top.mrexgo.demobpm.common.enums.AuditTypeEnum;
+import top.mrexgo.demobpm.common.utils.Base32Utils;
 
 import java.io.Serializable;
 import java.util.List;
@@ -46,5 +48,11 @@ public class AuditReqDTO implements Serializable {
     /**
      * 当前审核节点定位值
      */
+    private String location;
     private List<Integer> processNodeLocation;
+
+    public void initLocation() {
+        String s = Base32Utils.base32Decode(location);
+        processNodeLocation = JSONUtil.toList(s, Integer.class);
+    }
 }
