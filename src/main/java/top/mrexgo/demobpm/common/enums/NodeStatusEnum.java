@@ -28,7 +28,9 @@ public enum NodeStatusEnum {
     FUTURE(3, "未到达该审批节点"),
     WAITING(4, "等待子节点审批"),
     SKIP(5, "跳过审批"),
-    NO_PASS(6, "不通过");
+    NO_PASS(6, "不通过"),
+    ROLLBACK(7, "驳回"),
+    DELETE(99, "已删除");
 
     @EnumValue
     private Integer value;

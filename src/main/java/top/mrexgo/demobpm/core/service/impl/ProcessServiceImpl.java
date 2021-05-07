@@ -28,7 +28,7 @@ public class ProcessServiceImpl implements ProcessService {
 
     @Override
     public void startProcess() {
-        BpmProcess p = this.init();
+        BpmProcess p = this.init(null);
         mongoDAO.saveProcess(p);
     }
 
@@ -67,6 +67,9 @@ public class ProcessServiceImpl implements ProcessService {
                 this.handleNoPassNode(cur, 1, dto.getProcessNodeLocation().size(), dto);
                 break;
             case ROLLBACK:
+                // 解决方案是直接从当前节点截断，在后面添加从驳回节点开始的剩余节点
+                handRollBackNode(cur, 1, dto.getProcessNodeLocation().size(), dto);
+                connectLast(p, dto);
                 break;
             case TRANSPORT:
                 // 判断当前审批节点父节点是否为会签节点，如果是则直接在父节点添加一个子节点，否则将当前节点改为会签节点
@@ -177,6 +180,23 @@ public class ProcessServiceImpl implements ProcessService {
             BpmProcessNode next = cur.getNodes().get(pos);
             handleNoPassNode(next, i + 1, size, dto);
             cur.setNodeStatus(NodeStatusEnum.NO_PASS);
+            skipRest(cur);
+        }
+    }
+
+    private void handRollBackNode(BpmProcessNode cur, int i, int size, AuditReqDTO dto) {
+        if (i == size) {
+            // 到达最终节点位置
+            if (!NodeTypeEnum.NORMAL.equals(cur.getNodeType()) || !dto.getProcessNodeId().equals(cur.getNodeId())) {
+                // 未到达叶子节点
+                throw new RuntimeException("审核节点错误");
+            }
+            cur.setNodeStatus(NodeStatusEnum.ROLLBACK).setAuditMsg(dto.getAuditMsg());
+        } else {
+            int pos = dto.getProcessNodeLocation().get(i);
+            BpmProcessNode next = cur.getNodes().get(pos);
+            handleNoPassNode(next, i + 1, size, dto);
+            cur.setNodeStatus(NodeStatusEnum.ROLLBACK);
             skipRest(cur);
         }
     }
@@ -302,10 +322,16 @@ public class ProcessServiceImpl implements ProcessService {
         return false;
     }
 
+    private void connectLast(BpmProcess cur, AuditReqDTO dto) {
+        BpmProcess template = init(null);
+        cur.setNodes(cur.getNodes().subList(0, cur.getCurrentNode()));
+        cur.getNodes().addAll(template.getNodes().subList(dto.getRollbackTo(), template.getNodes().size() - 1));
+    }
+
     /**
      * 创建一个简单流程
      */
-    private BpmProcess init() {
+    private BpmProcess init(Integer type) {
         BpmProcess bpmProcess = new BpmProcess();
         bpmProcess.setProcessType(1).setName("模板流程").setProcessId(1L).setCurrentNode(1).setStatus(NodeStatusEnum.WAITING);
         List<BpmProcessNode> nodes = new ArrayList<>();
