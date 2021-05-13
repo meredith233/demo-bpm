@@ -10,7 +10,7 @@ import lombok.experimental.Accessors;
 
 /**
  * @author liangjuhong
- * @since 2021/4/30 - 16:23
+ * @since 2021/5/13 - 11:35
  */
 @Data
 @Builder
@@ -19,9 +19,21 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = true)
 @TableName("bpm_template")
-public class ProcessPO extends BasePO {
+public class ProcessNodePO extends BasePO {
 
-    private String processName;
+    private Long processId;
 
-    private Integer processType;
+    private Long parentNodeId;
+
+    private String nodeName;
+
+    private Integer nodeType;
+
+    private String conditionStr;
+
+    private Integer allNeedFinish;
+
+    private String location;
+
+    private Integer sort;
 }

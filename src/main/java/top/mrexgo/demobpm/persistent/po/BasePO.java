@@ -22,6 +22,8 @@ public class BasePO implements Serializable {
     @TableId(value = "id")
     private Long id;
 
+    private String remark;
+
     /**
      * 创建时间
      */

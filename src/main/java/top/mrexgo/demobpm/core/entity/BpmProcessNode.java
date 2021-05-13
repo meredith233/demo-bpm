@@ -50,7 +50,7 @@ public class BpmProcessNode implements Serializable {
      * 条件语句
      * 语法规则待定
      */
-    private String condition;
+    private String conditionStr;
 
     /**
      * 以下两个参数仅 有子节点的节点 有效
@@ -67,6 +67,11 @@ public class BpmProcessNode implements Serializable {
      * 节点定位值
      */
     private String location;
+
+    /**
+     * 排序字段
+     */
+    private Integer sort;
 
     /**
      * 子节点（可为空）
