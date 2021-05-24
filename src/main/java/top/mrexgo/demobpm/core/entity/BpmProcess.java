@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 import top.mrexgo.demobpm.common.enums.NodeStatusEnum;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author mrexgo
@@ -48,4 +49,6 @@ public class BpmProcess {
      * 这个流程类相当于一个串行节点，这样可以少套一层
      */
     private List<BpmProcessNode> nodes;
+
+    private Map<String, Integer> conditionParam;
 }

@@ -9,6 +9,7 @@ import top.mrexgo.demobpm.common.utils.Base32Utils;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author liangjuhong
@@ -49,6 +50,11 @@ public class AuditReqDTO implements Serializable {
      * 驳回到指定节点
      */
     private Integer rollbackTo;
+
+    /**
+     * 用于条件审核节点的参数
+     */
+    private Map<String, Integer> conditionParam;
 
     /**
      * 当前审核节点定位值

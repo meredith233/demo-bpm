@@ -2,6 +2,7 @@ package top.mrexgo.demobpm.core.service.impl;
 
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
+import com.baomidou.mybatisplus.core.toolkit.ObjectUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import top.mrexgo.demobpm.common.enums.NodeStatusEnum;
@@ -79,6 +80,9 @@ public class ProcessServiceImpl implements ProcessService {
             case RE_LUNCH:
                 break;
             default:
+        }
+        if (ObjectUtils.isNotEmpty(dto.getConditionParam())) {
+            p.getConditionParam().putAll(dto.getConditionParam());
         }
         mongoDAO.saveProcess(p);
     }
