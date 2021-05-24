@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import top.mrexgo.demobpm.common.enums.NodeStatusEnum;
 import top.mrexgo.demobpm.common.enums.NodeTypeEnum;
+import top.mrexgo.demobpm.common.exception.ServiceException;
 import top.mrexgo.demobpm.common.utils.Base32Utils;
 import top.mrexgo.demobpm.core.dto.AuditReqDTO;
 import top.mrexgo.demobpm.core.entity.BpmProcess;
@@ -37,16 +38,16 @@ public class ProcessServiceImpl implements ProcessService {
         BpmProcess p = mongoDAO.getProcess(dto.getProcessId());
         if (!NodeStatusEnum.WAITING.equals(p.getStatus())) {
             // 流程不在审批状态
-            throw new RuntimeException("流程无法审批");
+            throw new ServiceException("流程无法审批");
         }
         dto.initLocation();
         if (CollectionUtils.isEmpty(dto.getProcessNodeLocation())) {
             // 没有定位信息，报错
-            throw new RuntimeException("没有节点定位信息");
+            throw new ServiceException("没有节点定位信息");
         }
         if (!dto.getProcessNodeLocation().get(0).equals(p.getCurrentNode())) {
             // 节点定位错误
-            throw new RuntimeException("节点定位信息有误");
+            throw new ServiceException("节点定位信息有误");
         }
         BpmProcessNode cur = p.getNodes().get(dto.getProcessNodeLocation().get(0));
 
@@ -98,7 +99,7 @@ public class ProcessServiceImpl implements ProcessService {
             findAuditNodes(node, auditNodes);
         } else {
             // 不在审核状态
-            throw new RuntimeException("审核状态异常");
+            throw new ServiceException("审核状态异常");
         }
     }
 
@@ -137,7 +138,7 @@ public class ProcessServiceImpl implements ProcessService {
             // 到达最终节点位置
             if (!NodeTypeEnum.NORMAL.equals(cur.getNodeType()) || !dto.getProcessNodeId().equals(cur.getNodeId())) {
                 // 未到达叶子节点
-                throw new RuntimeException("审核节点错误");
+                throw new ServiceException("审核节点错误");
             }
             cur.setNodeStatus(NodeStatusEnum.COMPLETE).setAuditMsg(dto.getAuditMsg());
             return true;
@@ -170,7 +171,7 @@ public class ProcessServiceImpl implements ProcessService {
             // 到达最终节点位置
             if (!NodeTypeEnum.NORMAL.equals(cur.getNodeType()) || !dto.getProcessNodeId().equals(cur.getNodeId())) {
                 // 未到达叶子节点
-                throw new RuntimeException("审核节点错误");
+                throw new ServiceException("审核节点错误");
             }
             cur.setNodeStatus(NodeStatusEnum.NO_PASS).setAuditMsg(dto.getAuditMsg());
         } else {
@@ -187,7 +188,7 @@ public class ProcessServiceImpl implements ProcessService {
             // 到达最终节点位置
             if (!NodeTypeEnum.NORMAL.equals(cur.getNodeType()) || !dto.getProcessNodeId().equals(cur.getNodeId())) {
                 // 未到达叶子节点
-                throw new RuntimeException("审核节点错误");
+                throw new ServiceException("审核节点错误");
             }
             cur.setNodeStatus(NodeStatusEnum.ROLLBACK).setAuditMsg(dto.getAuditMsg());
         } else {
@@ -204,7 +205,7 @@ public class ProcessServiceImpl implements ProcessService {
             // 到达最终节点位置
             if (!NodeTypeEnum.NORMAL.equals(cur.getNodeType()) || !dto.getProcessNodeId().equals(cur.getNodeId())) {
                 // 未到达叶子节点
-                throw new RuntimeException("审核节点错误");
+                throw new ServiceException("审核节点错误");
             }
             BpmProcessNode generated = BpmProcessNode.builder()
                 .nodeId(111L)
@@ -289,7 +290,7 @@ public class ProcessServiceImpl implements ProcessService {
     private boolean readyNode(BpmProcessNode node) {
         if (!NodeStatusEnum.FUTURE.equals(node.getNodeStatus())) {
             // 初始化状态错误
-            throw new RuntimeException("下一节点初始化失败");
+            throw new ServiceException("下一节点初始化失败");
         }
         switch (node.getNodeType()) {
             case SERIAL:
