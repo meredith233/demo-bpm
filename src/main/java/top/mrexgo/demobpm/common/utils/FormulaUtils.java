@@ -58,7 +58,19 @@ public class FormulaUtils {
             for (int i = 0; i < len; i++) {
                 char c = this.condition.charAt(i);
                 if ('0' <= c && c <= '9') {
-
+                    int temp = c;
+                    int j = i + 1;
+                    while (j < len) {
+                        c = this.condition.charAt(j);
+                        if ('0' <= c && c <= '9') {
+                            temp *= 10;
+                            temp += c;
+                        } else {
+                            break;
+                        }
+                    }
+                    nodeList.add(Node.builder().nodeType(FormulatorNodeTypeEnum.NUMBER).value(temp).build());
+                    i = j - 1;
                 } else if (c == '$') {
                     if (i + 1 >= len || this.condition.charAt(i + 1) != '{') {
                         throw new ServiceException("非法参数表达式");
@@ -74,7 +86,8 @@ public class FormulaUtils {
                         .paramKey(this.condition.substring(i, j)).build());
                     i = j + 1;
                 } else if (VALID_OPERATORS.contains(c)) {
-
+                    nodeList.add(Node.builder().nodeType(FormulatorNodeTypeEnum.OPERATOR)
+                        .operator(c).build());
                 } else {
                     throw new ServiceException("非法字符");
                 }
