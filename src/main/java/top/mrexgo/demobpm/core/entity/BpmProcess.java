@@ -25,6 +25,11 @@ public class BpmProcess {
     private Long processId;
 
     /**
+     * 模板流程id
+     */
+    private Long templateProcessId;
+
+    /**
      * 流程名称
      */
     private String name;
@@ -50,5 +55,13 @@ public class BpmProcess {
      */
     private List<BpmProcessNode> nodes;
 
+    /**
+     * 用于条件节点的参数
+     */
     private Map<String, Integer> conditionParam;
+
+    /**
+     * 当前待审核人
+     */
+    private List<Long> currentAuditor;
 }

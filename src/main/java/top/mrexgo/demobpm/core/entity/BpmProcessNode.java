@@ -27,6 +27,11 @@ public class BpmProcessNode implements Serializable {
     private Long nodeId;
 
     /**
+     * 模板节点id
+     */
+    private Long templateNodeId;
+
+    /**
      * 节点名称
      */
     private String nodeName;

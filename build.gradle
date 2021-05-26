@@ -34,6 +34,7 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
+    implementation group: 'org.mapstruct', name: 'mapstruct', version: '1.4.2.Final'
     implementation 'org.flywaydb:flyway-core:7.8.2'
 }
 

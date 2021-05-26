@@ -1,7 +1,6 @@
 create table bpm_template
 (
     id           bigint                              not null comment 'id',
-    condition_id bigint                              null comment '用于获取查询条件的id',
     process_name varchar(255)                        not null comment '流程名称',
     process_type int(2)                              not null comment '流程类型',
     remark       varchar(255)                        null comment '备注',
@@ -37,3 +36,20 @@ create table bpm_template_node
         primary key (id)
 );
 
+create table bpm_template_auditor
+(
+    id              bigint                              not null comment 'id',
+    process_id      bigint                              not null comment '流程id',
+    process_node_id bigint                              not null comment '节点id',
+    auditor_type    int(2)                              not null comment '审核人类型',
+    auditor_ids     varchar(255)                        null comment '审核人id集合',
+    remark          varchar(255)                        null comment '备注',
+    delete_flag     int(2)    default 0                 not null comment '删除状态（0-未删除、1-已删除）',
+    created_by      bigint                              null comment '创建人',
+    created_at      datetime                            null comment '创建时间',
+    updated_by      bigint                              null comment '最后更新人',
+    updated_at      timestamp default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '最后更新时间',
+    version         bigint    default 0                 null comment '版本',
+    constraint bpm_template_pk
+        primary key (id)
+);
