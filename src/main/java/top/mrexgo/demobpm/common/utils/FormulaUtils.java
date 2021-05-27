@@ -1,5 +1,6 @@
 package top.mrexgo.demobpm.common.utils;
 
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,6 +10,8 @@ import top.mrexgo.demobpm.common.exception.ServiceException;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +22,7 @@ import java.util.Map;
 public class FormulaUtils {
 
     private static final List<Character> VALID_OPERATORS;
+    private static final List<Character> JUDGE_OPERATORS;
 
     static {
         List<Character> temp = new ArrayList<>();
@@ -28,6 +32,12 @@ public class FormulaUtils {
         temp.add('>');
         temp.add('=');
         VALID_OPERATORS = Collections.unmodifiableList(temp);
+
+        temp = new ArrayList<>();
+        temp.add('<');
+        temp.add('>');
+        temp.add('=');
+        JUDGE_OPERATORS = Collections.unmodifiableList(temp);
     }
 
     public boolean validCheck(String condition) {
@@ -36,8 +46,8 @@ public class FormulaUtils {
     }
 
     public boolean paramCheck(String condition, Map<String, Integer> param) {
-
-        return false;
+        Formulator formulator = new Formulator(condition);
+        return formulator.paramCheck(param);
     }
 
     @NoArgsConstructor
@@ -47,6 +57,8 @@ public class FormulaUtils {
         private String condition;
 
         private List<Node> nodeList = new ArrayList<>();
+
+        private Map<String, Integer> param;
 
         public Formulator(String condition) {
             this.condition = condition.trim();
@@ -92,15 +104,188 @@ public class FormulaUtils {
                     throw new ServiceException("非法字符");
                 }
             }
+            if (CollectionUtils.isEmpty(nodeList)) {
+                throw new ServiceException("节点列表为空");
+            }
+            long cnt = nodeList.stream()
+                .filter(i -> FormulatorNodeTypeEnum.OPERATOR.equals(i.getNodeType()))
+                .map(Node::getOperator).filter(JUDGE_OPERATORS::contains).count();
+            if (cnt != 1) {
+                throw new ServiceException("判断运算符只能有一个");
+            }
+        }
+
+        private boolean simpleTest() {
+            int size = nodeList.size();
+            int splitSign = 0;
+            for (splitSign = 0; splitSign < size; splitSign++) {
+                Node cur = nodeList.get(splitSign);
+                if (FormulatorNodeTypeEnum.OPERATOR.equals(cur.getNodeType())
+                    && JUDGE_OPERATORS.contains(cur.getOperator())) {
+                    break;
+                }
+            }
+            int left = testCal(0, splitSign);
+            int right = testCal(splitSign + 1, size);
+            Node split = nodeList.get(splitSign);
+            boolean flag;
+            switch (split.getOperator()) {
+                case '>':
+                    flag = left > right;
+                    break;
+                case '<':
+                    flag = left < right;
+                    break;
+                case '=':
+                    flag = left == right;
+                    break;
+                default:
+                    throw new ServiceException("非法判断字符");
+            }
+            return flag;
+        }
+
+        /**
+         * 左闭右开计算
+         *
+         * @param left  left
+         * @param right right
+         * @return ans
+         */
+        private int testCal(int left, int right) {
+            Deque<Integer> stack = new LinkedList<>();
+            char preSign = '+';
+            int num = 0;
+            for (int i = left; i < right; i++) {
+                Node cur = nodeList.get(i);
+                if (FormulatorNodeTypeEnum.OPERATOR.equals(cur.getNodeType())) {
+                    if (i - 1 < 0) {
+                        throw new ServiceException("非法表达式");
+                    }
+                    Node pre = nodeList.get(i - 1);
+                    if (FormulatorNodeTypeEnum.NUMBER.equals(pre.getNodeType())) {
+                        num = pre.getValue();
+                    } else if (FormulatorNodeTypeEnum.PARAM.equals(pre.nodeType)) {
+                        num = 1;
+                    } else {
+                        throw new ServiceException("非法表达式");
+                    }
+                    switch (preSign) {
+                        case '+':
+                            stack.push(num);
+                            break;
+                        case '-':
+                            stack.push(-num);
+                            break;
+                        case '*':
+                            stack.push(stack.pop() * num);
+                            break;
+                        case '/':
+                            stack.push(stack.pop() / num);
+                            break;
+                        default:
+                    }
+                    preSign = cur.getOperator();
+                }
+            }
+            int ans = 0;
+            while (!stack.isEmpty()) {
+                ans += stack.pop();
+            }
+            return ans;
         }
 
         public boolean checkValid() {
             try {
                 init();
+                simpleTest();
                 return true;
             } catch (Exception e) {
                 return false;
             }
+        }
+
+        public boolean paramCheck(Map<String, Integer> param) {
+            this.param = param;
+            init();
+            return paramTest();
+        }
+
+        private boolean paramTest() {
+            int size = nodeList.size();
+            int splitSign = 0;
+            for (splitSign = 0; splitSign < size; splitSign++) {
+                Node cur = nodeList.get(splitSign);
+                if (FormulatorNodeTypeEnum.OPERATOR.equals(cur.getNodeType())
+                    && JUDGE_OPERATORS.contains(cur.getOperator())) {
+                    break;
+                }
+            }
+            int left = paramCal(0, splitSign);
+            int right = paramCal(splitSign + 1, size);
+            Node split = nodeList.get(splitSign);
+            boolean flag;
+            switch (split.getOperator()) {
+                case '>':
+                    flag = left > right;
+                    break;
+                case '<':
+                    flag = left < right;
+                    break;
+                case '=':
+                    flag = left == right;
+                    break;
+                default:
+                    throw new ServiceException("非法判断字符");
+            }
+            return flag;
+        }
+
+        private int paramCal(int left, int right) {
+            Deque<Integer> stack = new LinkedList<>();
+            char preSign = '+';
+            int num = 0;
+            for (int i = left; i < right; i++) {
+                Node cur = nodeList.get(i);
+                if (FormulatorNodeTypeEnum.OPERATOR.equals(cur.getNodeType())) {
+                    if (i - 1 < 0) {
+                        throw new ServiceException("非法表达式");
+                    }
+                    Node pre = nodeList.get(i - 1);
+                    if (FormulatorNodeTypeEnum.NUMBER.equals(pre.getNodeType())) {
+                        num = pre.getValue();
+                    } else if (FormulatorNodeTypeEnum.PARAM.equals(pre.nodeType)) {
+                        Integer temp = param.get(pre.getParamKey());
+                        if (temp == null) {
+                            throw new ServiceException("参数{" + pre.getParamKey() + "}不存在");
+                        }
+                        num = temp;
+                    } else {
+                        throw new ServiceException("非法表达式");
+                    }
+                    switch (preSign) {
+                        case '+':
+                            stack.push(num);
+                            break;
+                        case '-':
+                            stack.push(-num);
+                            break;
+                        case '*':
+                            stack.push(stack.pop() * num);
+                            break;
+                        case '/':
+                            stack.push(stack.pop() / num);
+                            break;
+                        default:
+                    }
+                    preSign = cur.getOperator();
+                }
+            }
+            int ans = 0;
+            while (!stack.isEmpty()) {
+                ans += stack.pop();
+            }
+            return ans;
         }
 
         @Data
