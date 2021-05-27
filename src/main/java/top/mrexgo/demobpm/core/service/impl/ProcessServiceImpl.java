@@ -1,5 +1,7 @@
 package top.mrexgo.demobpm.core.service.impl;
 
+import cn.hutool.core.lang.Snowflake;
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.ObjectUtils;
@@ -31,9 +33,10 @@ public class ProcessServiceImpl implements ProcessService {
     private final ProcessMongoDAO mongoDAO;
 
     @Override
-    public void startProcess() {
+    public Long startProcess() {
         BpmProcess p = this.init(null);
         mongoDAO.saveProcess(p);
+        return p.getProcessId();
     }
 
     @Override
@@ -57,6 +60,14 @@ public class ProcessServiceImpl implements ProcessService {
     }
 
     private void doAudit(BpmProcess p, AuditReqDTO dto) {
+        if (ObjectUtils.isNotEmpty(dto.getConditionParam())) {
+            if (p.getConditionParam() == null) {
+                p.setConditionParam(dto.getConditionParam());
+            } else {
+                p.getConditionParam().putAll(dto.getConditionParam());
+            }
+        }
+
         BpmProcessNode cur = p.getNodes().get(dto.getProcessNodeLocation().get(0));
         switch (dto.getAuditType()) {
             case PASS:
@@ -87,9 +98,6 @@ public class ProcessServiceImpl implements ProcessService {
                 break;
             default:
         }
-        if (ObjectUtils.isNotEmpty(dto.getConditionParam())) {
-            p.getConditionParam().putAll(dto.getConditionParam());
-        }
     }
 
     @Override
@@ -102,8 +110,7 @@ public class ProcessServiceImpl implements ProcessService {
     }
 
     private void findAuditNodes(BpmProcess p, List<BpmProcessNode> auditNodes) {
-        int pos = p.getCurrentNodePosition();
-        BpmProcessNode node = p.getNodes().get(pos);
+        BpmProcessNode node = p.getCurrentNode();
         if (NodeStatusEnum.READY.equals(node.getNodeStatus()) || NodeStatusEnum.WAITING.equals(node.getNodeStatus())) {
             findAuditNodes(node, auditNodes);
         } else {
@@ -125,7 +132,6 @@ public class ProcessServiceImpl implements ProcessService {
                 }
                 break;
             case CONDITION:
-                break;
             case NORMAL:
                 auditNodes.add(node);
                 break;
@@ -146,7 +152,8 @@ public class ProcessServiceImpl implements ProcessService {
     private boolean handleSuccessNode(BpmProcess p, BpmProcessNode cur, int posSign, int size, AuditReqDTO dto) {
         if (posSign == size) {
             // 到达最终节点位置
-            if (!NodeTypeEnum.NORMAL.equals(cur.getNodeType()) || !dto.getProcessNodeId().equals(cur.getNodeId())) {
+            if (!(NodeTypeEnum.NORMAL.equals(cur.getNodeType()) || NodeTypeEnum.CONDITION.equals(cur.getNodeType()))
+                || !dto.getProcessNodeId().equals(cur.getNodeId())) {
                 // 未到达叶子节点
                 throw new ServiceException("审核节点错误");
             }
@@ -319,7 +326,7 @@ public class ProcessServiceImpl implements ProcessService {
             case CONDITION:
                 boolean flag = FormulaUtils.paramCheck(node.getConditionStr(), conditionParam);
                 if (flag) {
-                    node.setNodeStatus(NodeStatusEnum.WAITING);
+                    node.setNodeStatus(NodeStatusEnum.READY);
                 } else {
                     node.setNodeStatus(NodeStatusEnum.SKIP);
                     p.setCurrentNodePosition(p.getCurrentNodePosition() + 1);
@@ -349,27 +356,29 @@ public class ProcessServiceImpl implements ProcessService {
      * 创建一个简单流程
      */
     private BpmProcess init(Integer type) {
+        Snowflake snowflake = IdUtil.getSnowflake(1, 1);
         BpmProcess bpmProcess = new BpmProcess();
-        bpmProcess.setProcessType(1).setName("模板流程").setProcessId(1L).setCurrentNodePosition(1).setStatus(NodeStatusEnum.WAITING);
+        bpmProcess.setProcessId(snowflake.nextId()).setProcessType(1).setName("模板流程").setCurrentNodePosition(1).setStatus(NodeStatusEnum.WAITING);
         List<BpmProcessNode> nodes = new ArrayList<>();
-        nodes.add(BpmProcessNode.builder().nodeId(1L).nodeName("开始节点").nodeStatus(NodeStatusEnum.COMPLETE).nodeType(NodeTypeEnum.START).build());
-        nodes.add(BpmProcessNode.builder().nodeId(2L).nodeName("节点1").nodeStatus(NodeStatusEnum.READY).nodeType(NodeTypeEnum.NORMAL).build());
-        nodes.add(BpmProcessNode.builder().nodeId(3L).nodeName("节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
+        nodes.add(BpmProcessNode.builder().nodeId(snowflake.nextId()).nodeName("开始节点").nodeStatus(NodeStatusEnum.COMPLETE).nodeType(NodeTypeEnum.START).build());
+        nodes.add(BpmProcessNode.builder().nodeId(snowflake.nextId()).nodeName("节点1").nodeStatus(NodeStatusEnum.READY).nodeType(NodeTypeEnum.NORMAL).build());
+        nodes.add(BpmProcessNode.builder().nodeId(snowflake.nextId()).nodeName("节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
+        nodes.add(BpmProcessNode.builder().nodeId(snowflake.nextId()).nodeName("条件节点1").nodeStatus(NodeStatusEnum.FUTURE).conditionStr("${days} > 3").nodeType(NodeTypeEnum.CONDITION).build());
         // 子节点有一个审核通过即通过
-        nodes.add(BpmProcessNode.builder().nodeId(4L).nodeName("并行节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.PARALLEL).nodes(new ArrayList<BpmProcessNode>() {{
-            add(BpmProcessNode.builder().nodeId(41L).nodeName("并行1节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-            add(BpmProcessNode.builder().nodeId(42L).nodeName("并行1节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-            add(BpmProcessNode.builder().nodeId(43L).nodeName("并行1串行1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.SERIAL).nodes(new ArrayList<BpmProcessNode>() {{
-                add(BpmProcessNode.builder().nodeId(51L).nodeName("并行1串行1节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-                add(BpmProcessNode.builder().nodeId(52L).nodeName("并行1串行1节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
+        nodes.add(BpmProcessNode.builder().nodeId(snowflake.nextId()).nodeName("并行节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.PARALLEL).nodes(new ArrayList<BpmProcessNode>() {{
+            add(BpmProcessNode.builder().nodeId(snowflake.nextId()).nodeName("并行1节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
+            add(BpmProcessNode.builder().nodeId(snowflake.nextId()).nodeName("并行1节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
+            add(BpmProcessNode.builder().nodeId(snowflake.nextId()).nodeName("并行1串行1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.SERIAL).nodes(new ArrayList<BpmProcessNode>() {{
+                add(BpmProcessNode.builder().nodeId(snowflake.nextId()).nodeName("并行1串行1节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
+                add(BpmProcessNode.builder().nodeId(snowflake.nextId()).nodeName("并行1串行1节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
             }}).build());
         }}).build());
         // 所有子节点通过才通过
-        nodes.add(BpmProcessNode.builder().nodeId(5L).nodeName("会签节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.COUNTERSIGN).nodes(new ArrayList<BpmProcessNode>() {{
-            add(BpmProcessNode.builder().nodeId(51L).nodeName("会签1节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-            add(BpmProcessNode.builder().nodeId(52L).nodeName("会签1节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
+        nodes.add(BpmProcessNode.builder().nodeId(snowflake.nextId()).nodeName("会签节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.COUNTERSIGN).nodes(new ArrayList<BpmProcessNode>() {{
+            add(BpmProcessNode.builder().nodeId(snowflake.nextId()).nodeName("会签1节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
+            add(BpmProcessNode.builder().nodeId(snowflake.nextId()).nodeName("会签1节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
         }}).build());
-        nodes.add(BpmProcessNode.builder().nodeId(99L).nodeName("结束节点").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.END).build());
+        nodes.add(BpmProcessNode.builder().nodeId(snowflake.nextId()).nodeName("结束节点").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.END).build());
         bpmProcess.setNodes(nodes);
 
         initLocation(bpmProcess);

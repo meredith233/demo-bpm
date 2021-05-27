@@ -8,7 +8,7 @@ import top.mrexgo.demobpm.core.entity.BpmProcess;
  * @since 2021/4/30 - 14:38
  */
 public interface ProcessService {
-    void startProcess();
+    Long startProcess();
 
     void audit(AuditReqDTO dto);
 

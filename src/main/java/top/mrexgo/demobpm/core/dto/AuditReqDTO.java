@@ -4,6 +4,7 @@ import cn.hutool.json.JSONUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 import top.mrexgo.demobpm.common.enums.AuditTypeEnum;
 import top.mrexgo.demobpm.common.utils.Base32Utils;
 
@@ -18,6 +19,7 @@ import java.util.Map;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Accessors(chain = true)
 public class AuditReqDTO implements Serializable {
 
     private Long processId;
@@ -67,3 +69,4 @@ public class AuditReqDTO implements Serializable {
         processNodeLocation = JSONUtil.toList(s, Integer.class);
     }
 }
+
