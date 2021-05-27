@@ -11,12 +11,12 @@ import java.util.Map;
 class DemoBpmApplicationTests {
 
     @Test
-    void contextLoads() {
-        String content = "${days} > 3";
+    void testFormulation() {
+        String condition = "${days} * 99 > 327";
         Map<String, Integer> param = new HashMap<>();
         param.put("days", 5);
-        boolean flag = FormulaUtils.paramCheck(content, param);
-        System.out.println(flag);
+        boolean flag = FormulaUtils.paramCheck(condition, param);
+        assert flag;
     }
 
 }
