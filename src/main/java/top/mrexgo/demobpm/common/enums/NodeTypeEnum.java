@@ -26,6 +26,7 @@ public enum NodeTypeEnum {
     SERIAL(2, "串行节点"),
     PARALLEL(3, "并行节点"),
     COUNTERSIGN(4, "会签节点"),
+    // 条件节点与普通节点没有子节点
     CONDITION(5, "条件节点"),
     NORMAL(10, "普通节点"),
     END(99, "结束节点");

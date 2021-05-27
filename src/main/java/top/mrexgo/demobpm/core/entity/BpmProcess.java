@@ -47,7 +47,7 @@ public class BpmProcess {
     /**
      * 当前流程待审核节点位置
      */
-    private Integer currentNode;
+    private Integer currentNodePosition;
 
     /**
      * 流程节点
@@ -64,4 +64,8 @@ public class BpmProcess {
      * 当前待审核人
      */
     private List<Long> currentAuditor;
+
+    public BpmProcessNode getCurrentNode() {
+        return nodes.get(currentNodePosition);
+    }
 }
