@@ -4,11 +4,6 @@ server:
 # Spring 相关配置
 spring:
   # 数据源配置
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://81.69.245.27:10081/bpm-demo?serverTimezone=GMT%2B8
-    username: bpm-demo
-    password: xFaEkwmGDs686FSG
   redis:
     host: 81.69.245.27
     port: 10091
