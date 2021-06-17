@@ -1,6 +1,5 @@
 package top.mrexgo.demobpm.common.enums;
 
-import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
@@ -28,7 +27,6 @@ public enum AuditTypeEnum {
     TRANSPORT(4, "转代理审批"),
     RE_LUNCH(5, "重新发起");
 
-    @EnumValue
     private Integer value;
     private String label;
 

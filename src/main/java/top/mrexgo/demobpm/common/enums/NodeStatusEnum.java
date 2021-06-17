@@ -1,6 +1,5 @@
 package top.mrexgo.demobpm.common.enums;
 
-import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
@@ -32,7 +31,6 @@ public enum NodeStatusEnum {
     ROLLBACK(7, "驳回"),
     DELETE(99, "已删除");
 
-    @EnumValue
     private Integer value;
     private String label;
 

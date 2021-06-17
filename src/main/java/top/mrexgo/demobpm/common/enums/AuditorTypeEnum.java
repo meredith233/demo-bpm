@@ -1,6 +1,5 @@
 package top.mrexgo.demobpm.common.enums;
 
-import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
@@ -26,7 +25,6 @@ public enum AuditorTypeEnum {
     POSITION(2, "职务"),
     ORGANIZATION(3, "部门");
 
-    @EnumValue
     private Integer value;
     private String label;
 

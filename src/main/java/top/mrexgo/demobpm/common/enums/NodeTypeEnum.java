@@ -1,6 +1,5 @@
 package top.mrexgo.demobpm.common.enums;
 
-import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
@@ -31,7 +30,6 @@ public enum NodeTypeEnum {
     NORMAL(10, "普通节点"),
     END(99, "结束节点");
 
-    @EnumValue
     private Integer value;
     private String label;
 

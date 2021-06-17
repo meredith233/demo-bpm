@@ -1,8 +1,8 @@
 package top.mrexgo.demobpm.common.utils;
 
-import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
 import top.mrexgo.demobpm.common.enums.FormulatorNodeTypeEnum;
 import top.mrexgo.demobpm.common.exception.ServiceException;
 
