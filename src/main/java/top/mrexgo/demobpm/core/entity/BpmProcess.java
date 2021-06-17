@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import org.springframework.data.mongodb.core.mapping.MongoId;
+import top.mrexgo.demobpm.common.annotation.IncKey;
 import top.mrexgo.demobpm.common.enums.NodeStatusEnum;
 
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.Map;
 @NoArgsConstructor
 public class BpmProcess {
 
+    @IncKey
     @MongoId
     private Long processId;
 
