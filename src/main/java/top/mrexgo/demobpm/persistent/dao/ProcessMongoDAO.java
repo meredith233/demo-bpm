@@ -1,6 +1,7 @@
 package top.mrexgo.demobpm.persistent.dao;
 
 import top.mrexgo.demobpm.core.entity.BpmProcess;
+import top.mrexgo.demobpm.core.entity.BpmProcessTemplate;
 
 /**
  * @author liangjuhong
@@ -8,6 +9,8 @@ import top.mrexgo.demobpm.core.entity.BpmProcess;
  */
 public interface ProcessMongoDAO {
     void saveProcess(BpmProcess bpmProcess);
+
+    void saveProcessTemplate(BpmProcessTemplate bpmProcessTemplate);
 
     BpmProcess getProcess(Long processId);
 }

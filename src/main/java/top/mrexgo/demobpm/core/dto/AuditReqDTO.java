@@ -50,8 +50,9 @@ public class AuditReqDTO implements Serializable {
     /**
      * 驳回时使用
      * 驳回到指定节点
+     * 参数为指定节点nodeTemplateId
      */
-    private Integer rollbackTo;
+    private Long rollbackTo;
 
     /**
      * 用于条件审核节点的参数

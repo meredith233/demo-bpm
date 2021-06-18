@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Component;
 import top.mrexgo.demobpm.core.entity.BpmProcess;
+import top.mrexgo.demobpm.core.entity.BpmProcessTemplate;
 import top.mrexgo.demobpm.persistent.dao.ProcessMongoDAO;
 
 /**
@@ -19,6 +20,11 @@ public class ProcessMongoDAOImpl implements ProcessMongoDAO {
     @Override
     public void saveProcess(BpmProcess bpmProcess) {
         template.save(bpmProcess);
+    }
+
+    @Override
+    public void saveProcessTemplate(BpmProcessTemplate bpmProcessTemplate) {
+        template.save(bpmProcessTemplate);
     }
 
     @Override

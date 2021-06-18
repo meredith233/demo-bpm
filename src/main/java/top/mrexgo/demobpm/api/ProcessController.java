@@ -25,11 +25,6 @@ public class ProcessController {
 
     private final ProcessService processService;
 
-    @GetMapping
-    public void start() {
-        processService.startProcess();
-    }
-
     @PostMapping("/audit")
     public void audit(@RequestBody AuditReqDTO dto) {
         processService.audit(dto);

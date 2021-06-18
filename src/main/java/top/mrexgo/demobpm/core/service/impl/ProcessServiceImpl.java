@@ -1,6 +1,5 @@
 package top.mrexgo.demobpm.core.service.impl;
 
-import cn.hutool.core.lang.Snowflake;
 import cn.hutool.json.JSONUtil;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
@@ -14,6 +13,7 @@ import top.mrexgo.demobpm.common.utils.FormulaUtils;
 import top.mrexgo.demobpm.core.dto.AuditReqDTO;
 import top.mrexgo.demobpm.core.entity.BpmProcess;
 import top.mrexgo.demobpm.core.entity.BpmProcessNode;
+import top.mrexgo.demobpm.core.handler.ProcessInitHandler;
 import top.mrexgo.demobpm.core.service.ProcessService;
 import top.mrexgo.demobpm.persistent.dao.ProcessMongoDAO;
 
@@ -30,11 +30,11 @@ import java.util.Map;
 public class ProcessServiceImpl implements ProcessService {
 
     private final ProcessMongoDAO mongoDAO;
-    private final Snowflake snowflake;
+    private final ProcessInitHandler processInitHandler;
 
     @Override
     public Long startProcess() {
-        BpmProcess p = this.init(null);
+        BpmProcess p = processInitHandler.init(null);
         mongoDAO.saveProcess(p);
         return p.getProcessId();
     }
@@ -345,88 +345,29 @@ public class ProcessServiceImpl implements ProcessService {
     }
 
     private void connectLast(BpmProcess cur, AuditReqDTO dto) {
-        BpmProcess template = init(null);
+        BpmProcess template = processInitHandler.init(cur.getProcessType());
+        // 从当前节点截断
         cur.setNodes(cur.getNodes().subList(0, cur.getCurrentNodePosition()));
-        cur.getNodes().addAll(template.getNodes().subList(dto.getRollbackTo(), template.getNodes().size() - 1));
+        // 从驳回节点接上后续
+        int index = this.getIndexOfRollBackTo(template, dto.getRollbackTo());
+        cur.getNodes().addAll(template.getNodes().subList(index, template.getNodes().size() - 1));
+
+        // 初始化后续节点
         cur.setCurrentNodePosition(cur.getCurrentNodePosition() + 1);
         readyNode(cur, cur.getNodes().get(cur.getCurrentNodePosition()), cur.getConditionParam());
+
+        // 重新计算定位值
+        processInitHandler.initLocation(cur);
     }
 
-    /**
-     * 创建一个简单流程
-     */
-    private BpmProcess init(Integer type) {
-        BpmProcess bpmProcess = new BpmProcess();
-        bpmProcess.setProcessType(1).setName("模板流程").setCurrentNodePosition(1).setStatus(NodeStatusEnum.WAITING);
-        List<BpmProcessNode> nodes = new ArrayList<>();
-        nodes.add(BpmProcessNode.builder().nodeName("开始节点").nodeStatus(NodeStatusEnum.COMPLETE).nodeType(NodeTypeEnum.START).build());
-        nodes.add(BpmProcessNode.builder().nodeName("节点1").nodeStatus(NodeStatusEnum.READY).nodeType(NodeTypeEnum.NORMAL).build());
-        nodes.add(BpmProcessNode.builder().nodeName("节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-        nodes.add(BpmProcessNode.builder().nodeName("条件节点1").nodeStatus(NodeStatusEnum.FUTURE).conditionStr("${days} > 3").nodeType(NodeTypeEnum.CONDITION).build());
-        // 子节点有一个审核通过即通过
-        nodes.add(BpmProcessNode.builder().nodeName("并行节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.PARALLEL).nodes(new ArrayList<BpmProcessNode>() {{
-            add(BpmProcessNode.builder().nodeName("并行1节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-            add(BpmProcessNode.builder().nodeName("并行1节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-            add(BpmProcessNode.builder().nodeName("并行1串行1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.SERIAL).nodes(new ArrayList<BpmProcessNode>() {{
-                add(BpmProcessNode.builder().nodeName("并行1串行1节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-                add(BpmProcessNode.builder().nodeName("并行1串行1节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-            }}).build());
-        }}).build());
-        // 所有子节点通过才通过
-        nodes.add(BpmProcessNode.builder().nodeName("会签节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.COUNTERSIGN).nodes(new ArrayList<BpmProcessNode>() {{
-            add(BpmProcessNode.builder().nodeName("会签1节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-            add(BpmProcessNode.builder().nodeName("会签1节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-        }}).build());
-        nodes.add(BpmProcessNode.builder().nodeName("结束节点").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.END).build());
-        bpmProcess.setNodes(nodes);
-
-        initLocation(bpmProcess);
-        calAllNeedFinish(bpmProcess);
-        return bpmProcess;
-    }
-
-    private void calAllNeedFinish(BpmProcess bpmProcess) {
-        for (BpmProcessNode node : bpmProcess.getNodes()) {
-            calAllNeedFinish(node);
-        }
-    }
-
-    private void calAllNeedFinish(BpmProcessNode bpmProcessNode) {
-        switch (bpmProcessNode.getNodeType()) {
-            case SERIAL:
-            case COUNTERSIGN:
-                bpmProcessNode.setAllNeedFinish(bpmProcessNode.getNodes().size());
-                for (BpmProcessNode next : bpmProcessNode.getNodes()) {
-                    calAllNeedFinish(next);
-                }
-                break;
-            case PARALLEL:
-                bpmProcessNode.setAllNeedFinish(1);
-                for (BpmProcessNode next : bpmProcessNode.getNodes()) {
-                    calAllNeedFinish(next);
-                }
-                break;
-            default:
-        }
-    }
-
-    private void initLocation(BpmProcess bpmProcess) {
-        List<Integer> loc = new ArrayList<>();
-        initLocation(bpmProcess.getNodes(), loc);
-    }
-
-    private void initLocation(List<BpmProcessNode> nodes, List<Integer> loc) {
-        for (int i = 0; i < nodes.size(); i++) {
-            loc.add(i);
-            BpmProcessNode node = nodes.get(i);
-            List<Integer> newLoc = new ArrayList<>(loc);
-            node.setLocation(Base32Utils.base32ToString(JSONUtil.toJsonStr(newLoc)));
-            node.setNodeId(snowflake.nextId());
-            node.setFinished(0);
-            if (CollectionUtils.isNotEmpty(node.getNodes())) {
-                initLocation(node.getNodes(), newLoc);
+    private int getIndexOfRollBackTo(BpmProcess template, Long rollbackTo) {
+        int size = template.getNodes().size();
+        for (int i = 0; i < size; i++) {
+            BpmProcessNode node = template.getNodes().get(i);
+            if (rollbackTo.equals(node.getTemplateNodeId())) {
+                return i;
             }
-            loc.remove(loc.size() - 1);
         }
+        throw new ServiceException("未查询到驳回节点");
     }
 }
