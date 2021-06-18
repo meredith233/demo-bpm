@@ -29,12 +29,13 @@ public class MongoSaveEventListener extends AbstractMongoEventListener<Object> {
         ReflectionUtils.doWithFields(source.getClass(), field -> {
             ReflectionUtils.makeAccessible(field);
             if (field.isAnnotationPresent(IncKey.class)) {
-                if (!"class java.lang.Long".equals(field.getType())) {
+                if (!Long.class.equals(field.getType())) {
                     throw new ServiceException("id参数类型错");
                 }
                 Long val = null;
                 try {
-                    Method m = source.getClass().getMethod("get" + field.getName());
+                    String name = field.getName();
+                    Method m = source.getClass().getMethod("get" + name.substring(0, 1).toUpperCase() + name.substring(1));
                     val = (Long) m.invoke(source);
                 } catch (NoSuchMethodException | InvocationTargetException e) {
                     e.printStackTrace();
