@@ -3,12 +3,11 @@ package top.mrexgo.demobpm.core.entity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import top.mrexgo.demobpm.common.enums.NodeStatusEnum;
-import top.mrexgo.demobpm.common.enums.NodeTypeEnum;
 
-import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -20,24 +19,10 @@ import java.util.List;
 @Accessors(chain = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class BpmProcessNode implements Serializable {
+@EqualsAndHashCode(callSuper = false)
+public class BpmProcessNode extends BpmProcessNodeTemplate {
 
     private Long nodeId;
-
-    /**
-     * 模板节点id
-     */
-    private Long templateNodeId;
-
-    /**
-     * 节点名称
-     */
-    private String nodeName;
-
-    /**
-     * 节点类型
-     */
-    private NodeTypeEnum nodeType;
 
     /**
      * 节点审批状态
@@ -48,12 +33,6 @@ public class BpmProcessNode implements Serializable {
      * 审批备注
      */
     private String auditMsg;
-
-    /**
-     * 条件语句
-     * 语法规则待定
-     */
-    private String conditionStr;
 
     /**
      * 以下两个参数仅 有子节点的节点 有效
@@ -70,11 +49,6 @@ public class BpmProcessNode implements Serializable {
      * 节点定位值
      */
     private String location;
-
-    /**
-     * 排序字段
-     */
-    private Integer sort;
 
     /**
      * 子节点（可为空）

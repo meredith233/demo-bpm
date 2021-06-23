@@ -9,17 +9,16 @@ import top.mrexgo.demobpm.common.enums.NodeStatusEnum;
 import top.mrexgo.demobpm.common.enums.NodeTypeEnum;
 import top.mrexgo.demobpm.common.exception.ServiceException;
 import top.mrexgo.demobpm.common.utils.Base32Utils;
-import top.mrexgo.demobpm.common.utils.FormulaUtils;
 import top.mrexgo.demobpm.core.dto.AuditReqDTO;
 import top.mrexgo.demobpm.core.entity.BpmProcess;
 import top.mrexgo.demobpm.core.entity.BpmProcessNode;
 import top.mrexgo.demobpm.core.handler.ProcessInitHandler;
+import top.mrexgo.demobpm.core.handler.ProcessNodeHandler;
 import top.mrexgo.demobpm.core.service.ProcessService;
 import top.mrexgo.demobpm.persistent.dao.ProcessMongoDAO;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author liangjuhong
@@ -31,6 +30,7 @@ public class ProcessServiceImpl implements ProcessService {
 
     private final ProcessMongoDAO mongoDAO;
     private final ProcessInitHandler processInitHandler;
+    private final ProcessNodeHandler processNodeHandler;
 
     @Override
     public Long startProcess() {
@@ -74,7 +74,7 @@ public class ProcessServiceImpl implements ProcessService {
                 boolean passFlag = this.handleSuccessNode(p, cur, 1, dto.getProcessNodeLocation().size(), dto);
                 if (passFlag) {
                     p.setCurrentNodePosition(p.getCurrentNodePosition() + 1);
-                    boolean endFlag = readyNode(p, p.getCurrentNode(), p.getConditionParam());
+                    boolean endFlag = processNodeHandler.readyNode(p, p.getCurrentNode(), p.getConditionParam());
                     if (endFlag) {
                         // 流程审核结束
                         p.setStatus(NodeStatusEnum.COMPLETE);
@@ -175,7 +175,7 @@ public class ProcessServiceImpl implements ProcessService {
                 } else {
                     if (NodeTypeEnum.SERIAL.equals(cur.getNodeType())) {
                         // 串行节点中一个子节点通过后需初始化下一节点
-                        readyNode(p, cur.getNodes().get(cur.getFinished()), p.getConditionParam());
+                        processNodeHandler.readyNode(p, cur.getNodes().get(cur.getFinished()), p.getConditionParam());
                     }
                 }
             }
@@ -303,47 +303,6 @@ public class ProcessServiceImpl implements ProcessService {
         }
     }
 
-    private boolean readyNode(BpmProcess p, BpmProcessNode node, Map<String, Integer> conditionParam) {
-        if (!NodeStatusEnum.FUTURE.equals(node.getNodeStatus())) {
-            // 初始化状态错误
-            throw new ServiceException("下一节点初始化失败");
-        }
-        switch (node.getNodeType()) {
-            case SERIAL:
-                // 当前初始化节点为串行节点使仅初始化第一个子节点
-                node.setNodeStatus(NodeStatusEnum.WAITING);
-                BpmProcessNode first = node.getNodes().get(0);
-                readyNode(p, first, conditionParam);
-                break;
-            case PARALLEL:
-            case COUNTERSIGN:
-                // 当前初始化节点为并行或会签节点使需初始化所有子节点
-                node.setNodeStatus(NodeStatusEnum.WAITING);
-                for (BpmProcessNode next : node.getNodes()) {
-                    readyNode(p, next, conditionParam);
-                }
-                break;
-            case CONDITION:
-                boolean flag = FormulaUtils.paramCheck(node.getConditionStr(), conditionParam);
-                if (flag) {
-                    node.setNodeStatus(NodeStatusEnum.READY);
-                } else {
-                    node.setNodeStatus(NodeStatusEnum.SKIP);
-                    p.setCurrentNodePosition(p.getCurrentNodePosition() + 1);
-                    readyNode(p, p.getCurrentNode(), conditionParam);
-                }
-                break;
-            case NORMAL:
-                node.setNodeStatus(NodeStatusEnum.READY);
-                break;
-            case END:
-                node.setNodeStatus(NodeStatusEnum.COMPLETE);
-                return true;
-            default:
-        }
-        return false;
-    }
-
     private void connectLast(BpmProcess cur, AuditReqDTO dto) {
         BpmProcess template = processInitHandler.init(cur.getProcessType());
         // 从当前节点截断
@@ -354,7 +313,7 @@ public class ProcessServiceImpl implements ProcessService {
 
         // 初始化后续节点
         cur.setCurrentNodePosition(cur.getCurrentNodePosition() + 1);
-        readyNode(cur, cur.getNodes().get(cur.getCurrentNodePosition()), cur.getConditionParam());
+        processNodeHandler.readyNode(cur, cur.getNodes().get(cur.getCurrentNodePosition()), cur.getConditionParam());
 
         // 重新计算定位值
         processInitHandler.initLocation(cur);

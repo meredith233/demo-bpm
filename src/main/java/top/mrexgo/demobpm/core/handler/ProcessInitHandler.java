@@ -5,8 +5,6 @@ import cn.hutool.json.JSONUtil;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
-import top.mrexgo.demobpm.common.enums.NodeStatusEnum;
-import top.mrexgo.demobpm.common.enums.NodeTypeEnum;
 import top.mrexgo.demobpm.common.utils.Base32Utils;
 import top.mrexgo.demobpm.core.entity.BpmProcess;
 import top.mrexgo.demobpm.core.entity.BpmProcessNode;
@@ -26,6 +24,7 @@ public class ProcessInitHandler {
 
     private final ProcessMongoDAO mongoDAO;
     private final Snowflake snowflake;
+    private final ProcessNodeHandler processNodeHandler;
 
     public BpmProcess init(Integer type) {
         return doInit(type);
@@ -35,29 +34,7 @@ public class ProcessInitHandler {
      * 创建一个简单流程
      */
     private BpmProcess doInit(Integer type) {
-        BpmProcess bpmProcess = new BpmProcess();
-        bpmProcess.setProcessType(1).setName("模板流程").setCurrentNodePosition(1).setStatus(NodeStatusEnum.WAITING);
-        List<BpmProcessNode> nodes = new ArrayList<>();
-        nodes.add(BpmProcessNode.builder().nodeName("开始节点").nodeStatus(NodeStatusEnum.COMPLETE).nodeType(NodeTypeEnum.START).build());
-        nodes.add(BpmProcessNode.builder().nodeName("节点1").nodeStatus(NodeStatusEnum.READY).nodeType(NodeTypeEnum.NORMAL).build());
-        nodes.add(BpmProcessNode.builder().nodeName("节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-        nodes.add(BpmProcessNode.builder().nodeName("条件节点1").nodeStatus(NodeStatusEnum.FUTURE).conditionStr("${days} > 3").nodeType(NodeTypeEnum.CONDITION).build());
-        // 子节点有一个审核通过即通过
-        nodes.add(BpmProcessNode.builder().nodeName("并行节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.PARALLEL).nodes(new ArrayList<BpmProcessNode>() {{
-            add(BpmProcessNode.builder().nodeName("并行1节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-            add(BpmProcessNode.builder().nodeName("并行1节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-            add(BpmProcessNode.builder().nodeName("并行1串行1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.SERIAL).nodes(new ArrayList<BpmProcessNode>() {{
-                add(BpmProcessNode.builder().nodeName("并行1串行1节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-                add(BpmProcessNode.builder().nodeName("并行1串行1节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-            }}).build());
-        }}).build());
-        // 所有子节点通过才通过
-        nodes.add(BpmProcessNode.builder().nodeName("会签节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.COUNTERSIGN).nodes(new ArrayList<BpmProcessNode>() {{
-            add(BpmProcessNode.builder().nodeName("会签1节点1").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-            add(BpmProcessNode.builder().nodeName("会签1节点2").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.NORMAL).build());
-        }}).build());
-        nodes.add(BpmProcessNode.builder().nodeName("结束节点").nodeStatus(NodeStatusEnum.FUTURE).nodeType(NodeTypeEnum.END).build());
-        bpmProcess.setNodes(nodes);
+
 
         initLocation(bpmProcess);
         calAllNeedFinish(bpmProcess);
@@ -107,5 +84,14 @@ public class ProcessInitHandler {
             }
             loc.remove(loc.size() - 1);
         }
+    }
+
+    /**
+     * 将流程的开始节点设置为完成，并ready下一节点，剩余节点状态置为future
+     *
+     * @param process
+     */
+    public void initStatus(BpmProcess process) {
+
     }
 }
