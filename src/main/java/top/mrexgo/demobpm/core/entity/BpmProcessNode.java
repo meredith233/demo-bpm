@@ -7,7 +7,9 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import top.mrexgo.demobpm.common.enums.NodeStatusEnum;
+import top.mrexgo.demobpm.common.enums.NodeTypeEnum;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -20,9 +22,30 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class BpmProcessNode extends BpmProcessNodeTemplate {
+public class BpmProcessNode implements Serializable {
 
     private Long nodeId;
+
+    /**
+     * 模板节点id
+     */
+    private Long templateNodeId;
+
+    /**
+     * 节点名称
+     */
+    private String nodeName;
+
+    /**
+     * 节点类型
+     */
+    private NodeTypeEnum nodeType;
+
+    /**
+     * 条件语句
+     * 语法规则待定
+     */
+    private String conditionStr;
 
     /**
      * 节点审批状态
@@ -51,7 +74,41 @@ public class BpmProcessNode extends BpmProcessNodeTemplate {
     private String location;
 
     /**
+     * 排序字段
+     */
+    private Integer sort;
+
+    /**
      * 子节点（可为空）
      */
     private List<BpmProcessNode> nodes;
+
+    public void skipRest() {
+        if (NodeTypeEnum.SERIAL.equals(this.getNodeType())) {
+            for (BpmProcessNode node : this.getNodes()) {
+                doSkip(node);
+            }
+        }
+    }
+
+    private void doSkip(BpmProcessNode node) {
+        if (NodeStatusEnum.COMPLETE.equals(node.getNodeStatus()) || NodeStatusEnum.SKIP.equals(node.getNodeStatus())) {
+            return;
+        }
+        switch (node.getNodeType()) {
+            case SERIAL:
+            case PARALLEL:
+            case COUNTERSIGN:
+                node.setNodeStatus(NodeStatusEnum.SKIP);
+                for (BpmProcessNode next : node.getNodes()) {
+                    doSkip(next);
+                }
+                break;
+            case CONDITION:
+            case NORMAL:
+                node.setNodeStatus(NodeStatusEnum.SKIP);
+                break;
+            default:
+        }
+    }
 }

@@ -13,7 +13,6 @@ import top.mrexgo.demobpm.core.dto.AuditReqDTO;
 import top.mrexgo.demobpm.core.entity.BpmProcess;
 import top.mrexgo.demobpm.core.entity.BpmProcessNode;
 import top.mrexgo.demobpm.core.handler.ProcessInitHandler;
-import top.mrexgo.demobpm.core.handler.ProcessNodeHandler;
 import top.mrexgo.demobpm.core.service.ProcessService;
 import top.mrexgo.demobpm.persistent.dao.ProcessMongoDAO;
 
@@ -74,7 +73,7 @@ public class ProcessServiceImpl implements ProcessService {
                 boolean passFlag = this.handleSuccessNode(p, cur, 1, dto.getProcessNodeLocation().size(), dto);
                 if (passFlag) {
                     p.setCurrentNodePosition(p.getCurrentNodePosition() + 1);
-                    boolean endFlag = processNodeHandler.readyNode(p, p.getCurrentNode(), p.getConditionParam());
+                    boolean endFlag = p.readyNextNode();
                     if (endFlag) {
                         // 流程审核结束
                         p.setStatus(NodeStatusEnum.COMPLETE);
@@ -170,7 +169,7 @@ public class ProcessServiceImpl implements ProcessService {
                 if (cur.getFinished().equals(cur.getAllNeedFinish())) {
                     // 当前节点所需审核子节点全部审核完成
                     cur.setNodeStatus(NodeStatusEnum.COMPLETE);
-                    skipRest(cur);
+                    cur.skipRest();
                     return true;
                 } else {
                     if (NodeTypeEnum.SERIAL.equals(cur.getNodeType())) {
@@ -196,7 +195,7 @@ public class ProcessServiceImpl implements ProcessService {
             BpmProcessNode next = cur.getNodes().get(pos);
             handleNoPassNode(next, i + 1, size, dto);
             cur.setNodeStatus(NodeStatusEnum.NO_PASS);
-            skipRest(cur);
+            cur.skipRest();
         }
     }
 
@@ -213,7 +212,7 @@ public class ProcessServiceImpl implements ProcessService {
             BpmProcessNode next = cur.getNodes().get(pos);
             handleNoPassNode(next, i + 1, size, dto);
             cur.setNodeStatus(NodeStatusEnum.ROLLBACK);
-            skipRest(cur);
+            cur.skipRest();
         }
     }
 
@@ -271,35 +270,6 @@ public class ProcessServiceImpl implements ProcessService {
             int pos = dto.getProcessNodeLocation().get(i);
             BpmProcessNode next = cur.getNodes().get(pos);
             handleTransportNode(next, cur, i + 1, size, dto);
-        }
-    }
-
-    private void skipRest(BpmProcessNode cur) {
-        if (!NodeTypeEnum.NORMAL.equals(cur.getNodeType())) {
-            for (BpmProcessNode node : cur.getNodes()) {
-                doSkip(node);
-            }
-        }
-    }
-
-    private void doSkip(BpmProcessNode node) {
-        if (NodeStatusEnum.COMPLETE.equals(node.getNodeStatus()) || NodeStatusEnum.SKIP.equals(node.getNodeStatus())) {
-            return;
-        }
-        switch (node.getNodeType()) {
-            case SERIAL:
-            case PARALLEL:
-            case COUNTERSIGN:
-                node.setNodeStatus(NodeStatusEnum.SKIP);
-                for (BpmProcessNode next : node.getNodes()) {
-                    doSkip(next);
-                }
-                break;
-            case CONDITION:
-            case NORMAL:
-                node.setNodeStatus(NodeStatusEnum.SKIP);
-                break;
-            default:
         }
     }
 

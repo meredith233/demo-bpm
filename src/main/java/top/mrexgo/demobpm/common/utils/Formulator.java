@@ -200,6 +200,9 @@ public class Formulator {
             if (testMode) {
                 return 1;
             }
+            if (param == null) {
+                throw new ServiceException("参数{" + node.getParamKey() + "}不存在");
+            }
             Integer temp = param.get(node.getParamKey());
             if (temp == null) {
                 throw new ServiceException("参数{" + node.getParamKey() + "}不存在");

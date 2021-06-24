@@ -7,6 +7,8 @@ import lombok.experimental.Accessors;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 import top.mrexgo.demobpm.common.annotation.IncKey;
 import top.mrexgo.demobpm.common.enums.NodeStatusEnum;
+import top.mrexgo.demobpm.common.exception.ServiceException;
+import top.mrexgo.demobpm.common.utils.FormulaUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -69,5 +71,51 @@ public class BpmProcess {
 
     public BpmProcessNode getCurrentNode() {
         return nodes.get(currentNodePosition);
+    }
+
+    public boolean readyNextNode() {
+
+        return doReadyNode(getCurrentNode());
+    }
+
+    private boolean doReadyNode(BpmProcessNode node) {
+        if (!NodeStatusEnum.FUTURE.equals(node.getNodeStatus())) {
+            // 初始化状态错误
+            throw new ServiceException("下一节点初始化失败");
+        }
+        switch (node.getNodeType()) {
+            case SERIAL:
+                // 当前初始化节点为串行节点使仅初始化第一个子节点
+                node.setNodeStatus(NodeStatusEnum.WAITING);
+                BpmProcessNode first = node.getNodes().get(0);
+                doReadyNode(first);
+                break;
+            case PARALLEL:
+            case COUNTERSIGN:
+                // 当前初始化节点为并行或会签节点使需初始化所有子节点
+                node.setNodeStatus(NodeStatusEnum.WAITING);
+                for (BpmProcessNode next : node.getNodes()) {
+                    doReadyNode(next);
+                }
+                break;
+            case CONDITION:
+                boolean flag = FormulaUtils.paramCheck(node.getConditionStr(), conditionParam);
+                if (flag) {
+                    node.setNodeStatus(NodeStatusEnum.READY);
+                } else {
+                    node.setNodeStatus(NodeStatusEnum.SKIP);
+                    this.setCurrentNodePosition(this.getCurrentNodePosition() + 1);
+                    doReadyNode(this.getCurrentNode());
+                }
+                break;
+            case NORMAL:
+                node.setNodeStatus(NodeStatusEnum.READY);
+                break;
+            case END:
+                node.setNodeStatus(NodeStatusEnum.COMPLETE);
+                return true;
+            default:
+        }
+        return false;
     }
 }

@@ -12,5 +12,7 @@ public interface ProcessMongoDAO {
 
     void saveProcessTemplate(BpmProcessTemplate bpmProcessTemplate);
 
+    BpmProcessTemplate getProcessTemplateByType(Integer type);
+
     BpmProcess getProcess(Long processId);
 }

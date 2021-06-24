@@ -6,8 +6,10 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 import top.mrexgo.demobpm.common.utils.Base32Utils;
+import top.mrexgo.demobpm.core.assembler.ProcessAssembler;
 import top.mrexgo.demobpm.core.entity.BpmProcess;
 import top.mrexgo.demobpm.core.entity.BpmProcessNode;
+import top.mrexgo.demobpm.core.entity.BpmProcessTemplate;
 import top.mrexgo.demobpm.persistent.dao.ProcessMongoDAO;
 
 import java.util.ArrayList;
@@ -24,46 +26,17 @@ public class ProcessInitHandler {
 
     private final ProcessMongoDAO mongoDAO;
     private final Snowflake snowflake;
-    private final ProcessNodeHandler processNodeHandler;
+    private final ProcessAssembler assembler;
 
     public BpmProcess init(Integer type) {
-        return doInit(type);
+        return doInit(mongoDAO.getProcessTemplateByType(type));
     }
 
     /**
      * 创建一个简单流程
      */
-    private BpmProcess doInit(Integer type) {
-
-
-        initLocation(bpmProcess);
-        calAllNeedFinish(bpmProcess);
-        return bpmProcess;
-    }
-
-    private void calAllNeedFinish(BpmProcess bpmProcess) {
-        for (BpmProcessNode node : bpmProcess.getNodes()) {
-            calAllNeedFinish(node);
-        }
-    }
-
-    private void calAllNeedFinish(BpmProcessNode bpmProcessNode) {
-        switch (bpmProcessNode.getNodeType()) {
-            case SERIAL:
-            case COUNTERSIGN:
-                bpmProcessNode.setAllNeedFinish(bpmProcessNode.getNodes().size());
-                for (BpmProcessNode next : bpmProcessNode.getNodes()) {
-                    calAllNeedFinish(next);
-                }
-                break;
-            case PARALLEL:
-                bpmProcessNode.setAllNeedFinish(1);
-                for (BpmProcessNode next : bpmProcessNode.getNodes()) {
-                    calAllNeedFinish(next);
-                }
-                break;
-            default:
-        }
+    private BpmProcess doInit(BpmProcessTemplate template) {
+        return assembler.fromTemplate(template);
     }
 
     public void initLocation(BpmProcess bpmProcess) {
@@ -84,14 +57,5 @@ public class ProcessInitHandler {
             }
             loc.remove(loc.size() - 1);
         }
-    }
-
-    /**
-     * 将流程的开始节点设置为完成，并ready下一节点，剩余节点状态置为future
-     *
-     * @param process
-     */
-    public void initStatus(BpmProcess process) {
-
     }
 }
