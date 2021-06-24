@@ -29,11 +29,10 @@ public class ProcessServiceImpl implements ProcessService {
 
     private final ProcessMongoDAO mongoDAO;
     private final ProcessInitHandler processInitHandler;
-    private final ProcessNodeHandler processNodeHandler;
 
     @Override
-    public Long startProcess() {
-        BpmProcess p = processInitHandler.init(null);
+    public Long startProcess(Integer type) {
+        BpmProcess p = processInitHandler.init(type);
         mongoDAO.saveProcess(p);
         return p.getProcessId();
     }
@@ -72,7 +71,6 @@ public class ProcessServiceImpl implements ProcessService {
             case PASS:
                 boolean passFlag = this.handleSuccessNode(p, cur, 1, dto.getProcessNodeLocation().size(), dto);
                 if (passFlag) {
-                    p.setCurrentNodePosition(p.getCurrentNodePosition() + 1);
                     boolean endFlag = p.readyNextNode();
                     if (endFlag) {
                         // 流程审核结束
@@ -174,7 +172,7 @@ public class ProcessServiceImpl implements ProcessService {
                 } else {
                     if (NodeTypeEnum.SERIAL.equals(cur.getNodeType())) {
                         // 串行节点中一个子节点通过后需初始化下一节点
-                        processNodeHandler.readyNode(p, cur.getNodes().get(cur.getFinished()), p.getConditionParam());
+                        p.doReadyNode(cur.getNodes().get(cur.getFinished()));
                     }
                 }
             }
@@ -282,8 +280,7 @@ public class ProcessServiceImpl implements ProcessService {
         cur.getNodes().addAll(template.getNodes().subList(index, template.getNodes().size() - 1));
 
         // 初始化后续节点
-        cur.setCurrentNodePosition(cur.getCurrentNodePosition() + 1);
-        processNodeHandler.readyNode(cur, cur.getNodes().get(cur.getCurrentNodePosition()), cur.getConditionParam());
+        cur.readyNextNode();
 
         // 重新计算定位值
         processInitHandler.initLocation(cur);

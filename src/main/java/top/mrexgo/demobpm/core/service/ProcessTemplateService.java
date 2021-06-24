@@ -6,4 +6,5 @@ package top.mrexgo.demobpm.core.service;
  */
 public interface ProcessTemplateService {
 
+    void addTemplate();
 }

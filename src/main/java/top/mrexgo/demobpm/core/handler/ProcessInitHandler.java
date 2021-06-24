@@ -36,7 +36,9 @@ public class ProcessInitHandler {
      * 创建一个简单流程
      */
     private BpmProcess doInit(BpmProcessTemplate template) {
-        return assembler.fromTemplate(template);
+        BpmProcess bpmProcess = assembler.fromTemplate(template);
+        this.initNodeId(bpmProcess.getNodes());
+        return bpmProcess;
     }
 
     public void initLocation(BpmProcess bpmProcess) {
@@ -50,12 +52,20 @@ public class ProcessInitHandler {
             BpmProcessNode node = nodes.get(i);
             List<Integer> newLoc = new ArrayList<>(loc);
             node.setLocation(Base32Utils.base32ToString(JSONUtil.toJsonStr(newLoc)));
-            node.setNodeId(snowflake.nextId());
             node.setFinished(0);
             if (CollectionUtils.isNotEmpty(node.getNodes())) {
                 initLocation(node.getNodes(), newLoc);
             }
             loc.remove(loc.size() - 1);
+        }
+    }
+
+    public void initNodeId(List<BpmProcessNode> nodes) {
+        for (BpmProcessNode node : nodes) {
+            node.setNodeId(snowflake.nextId());
+            if (CollectionUtils.isNotEmpty(node.getNodes())) {
+                initNodeId(node.getNodes());
+            }
         }
     }
 }

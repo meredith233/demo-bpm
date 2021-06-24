@@ -26,7 +26,8 @@ public class ProcessTemplateServiceImpl implements ProcessTemplateService {
     private final ProcessInitHandler initHandler;
     private final ProcessAssembler assembler;
 
-    private void addTemplate() {
+    @Override
+    public void addTemplate() {
         BpmProcess bpmProcess = new BpmProcess();
         bpmProcess.setProcessType(1).setName("模板流程");
         List<BpmProcessNode> nodes = new ArrayList<>();
@@ -50,12 +51,15 @@ public class ProcessTemplateServiceImpl implements ProcessTemplateService {
         }}).build());
         nodes.add(BpmProcessNode.builder().nodeName("结束节点").nodeType(NodeTypeEnum.END).build());
         bpmProcess.setNodes(nodes);
+        bpmProcess.initStatus();
+        bpmProcess.setCurrentNodePosition(0);
+        bpmProcess.readyNextNode();
 
         initHandler.initLocation(bpmProcess);
+        initHandler.initNodeId(bpmProcess.getNodes());
 
         BpmProcessTemplate template = assembler.toTemplate(bpmProcess);
         template.calAllNeedFinish();
-        template.initStatus();
         dao.saveProcessTemplate(template);
     }
 }

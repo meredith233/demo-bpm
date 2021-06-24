@@ -2,6 +2,7 @@ package top.mrexgo.demobpm.core.assembler;
 
 import org.mapstruct.Builder;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 import top.mrexgo.demobpm.core.entity.BpmProcess;
 import top.mrexgo.demobpm.core.entity.BpmProcessNode;
@@ -20,5 +21,6 @@ public interface ProcessAssembler {
 
     BpmProcessTemplate toTemplate(BpmProcess bpmProcess);
 
+    @Mapping(target = "templateNodeId", source = "nodeId")
     BpmProcessNodeTemplate toTemplate(BpmProcessNode node);
 }

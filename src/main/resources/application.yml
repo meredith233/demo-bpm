@@ -4,21 +4,9 @@ server:
 # Spring 相关配置
 spring:
   # 数据源配置
-  redis:
-    host: 81.69.245.27
-    port: 10091
-    timeout: 10000
-    database: 0
-    lettuce:
-      pool:
-        max-active: 300
-        max-idle: 100
-        max-wait: -1
-        min-idle: 20
-      shutdown-timeout: 10000
   data:
     mongodb:
-      uri: mongodb://localhost:27017/bpm-demo
+      uri: mongodb://localhost:27017/bpm
 
 
 # MyBatis Plus 相关配置

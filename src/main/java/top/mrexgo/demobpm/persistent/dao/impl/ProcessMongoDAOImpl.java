@@ -32,7 +32,7 @@ public class ProcessMongoDAOImpl implements ProcessMongoDAO {
     @Override
     public BpmProcessTemplate getProcessTemplateByType(Integer type) {
         Query apiAccessQuery = new Query();
-        apiAccessQuery.addCriteria(Criteria.where("is_valid").is(true));
+        apiAccessQuery.addCriteria(Criteria.where("processType").is(type));
         return template.findOne(apiAccessQuery, BpmProcessTemplate.class);
     }
 

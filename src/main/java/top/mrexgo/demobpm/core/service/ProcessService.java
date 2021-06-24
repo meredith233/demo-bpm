@@ -14,7 +14,7 @@ public interface ProcessService {
      *
      * @return 流程id
      */
-    Long startProcess();
+    Long startProcess(Integer type);
 
     void audit(AuditReqDTO dto);
 

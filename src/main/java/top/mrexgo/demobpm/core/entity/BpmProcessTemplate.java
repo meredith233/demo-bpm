@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 import top.mrexgo.demobpm.common.annotation.IncKey;
 import top.mrexgo.demobpm.common.enums.NodeStatusEnum;
@@ -35,6 +36,7 @@ public class BpmProcessTemplate {
     /**
      * 流程类型
      */
+    @Indexed
     private Integer processType;
 
     /**
@@ -73,33 +75,6 @@ public class BpmProcessTemplate {
                 for (BpmProcessNodeTemplate next : bpmProcessNode.getNodes()) {
                     calAllNeedFinish(next);
                 }
-                break;
-            default:
-        }
-    }
-
-    public void initStatus() {
-        this.setStatus(NodeStatusEnum.WAITING);
-        for (BpmProcessNodeTemplate node : this.getNodes()) {
-            initStatus(node);
-        }
-    }
-
-    private void initStatus(BpmProcessNodeTemplate node) {
-        switch (node.getNodeType()) {
-            case START:
-                break;
-            case SERIAL:
-                break;
-            case PARALLEL:
-                break;
-            case COUNTERSIGN:
-                break;
-            case CONDITION:
-                break;
-            case NORMAL:
-                break;
-            case END:
                 break;
             default:
         }

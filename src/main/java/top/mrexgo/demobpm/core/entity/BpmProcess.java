@@ -74,11 +74,11 @@ public class BpmProcess {
     }
 
     public boolean readyNextNode() {
-
+        this.setCurrentNodePosition(this.getCurrentNodePosition() + 1);
         return doReadyNode(getCurrentNode());
     }
 
-    private boolean doReadyNode(BpmProcessNode node) {
+    public boolean doReadyNode(BpmProcessNode node) {
         if (!NodeStatusEnum.FUTURE.equals(node.getNodeStatus())) {
             // 初始化状态错误
             throw new ServiceException("下一节点初始化失败");
@@ -117,5 +117,34 @@ public class BpmProcess {
             default:
         }
         return false;
+    }
+
+    public void initStatus() {
+        this.setStatus(NodeStatusEnum.WAITING);
+        for (BpmProcessNode node : this.getNodes()) {
+            initStatus(node);
+        }
+    }
+
+    private void initStatus(BpmProcessNode node) {
+        switch (node.getNodeType()) {
+            case START:
+                node.setNodeStatus(NodeStatusEnum.COMPLETE);
+                break;
+            case CONDITION:
+            case NORMAL:
+            case END:
+                node.setNodeStatus(NodeStatusEnum.FUTURE);
+                break;
+            case PARALLEL:
+            case SERIAL:
+            case COUNTERSIGN:
+                node.setNodeStatus(NodeStatusEnum.FUTURE);
+                for (BpmProcessNode child : node.getNodes()) {
+                    initStatus(child);
+                }
+                break;
+            default:
+        }
     }
 }

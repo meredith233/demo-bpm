@@ -9,6 +9,7 @@ import top.mrexgo.demobpm.common.utils.FormulaUtils;
 import top.mrexgo.demobpm.core.dto.AuditReqDTO;
 import top.mrexgo.demobpm.core.entity.BpmProcess;
 import top.mrexgo.demobpm.core.service.ProcessService;
+import top.mrexgo.demobpm.core.service.ProcessTemplateService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +19,9 @@ class DemoBpmApplicationTests {
 
     @Autowired
     private ProcessService processService;
+
+    @Autowired
+    private ProcessTemplateService processTemplateService;
 
     @Test
     void testFormulation() {
@@ -29,8 +33,13 @@ class DemoBpmApplicationTests {
     }
 
     @Test
+    void testAddTemplate() {
+        processTemplateService.addTemplate();
+    }
+
+    @Test
     void testSimpleProcess() {
-        Long processId = processService.startProcess();
+        Long processId = processService.startProcess(1);
         BpmProcess p = processService.listAuditNodes(processId);
         processService.audit(new AuditReqDTO().setProcessId(processId).setAuditMsg("通过")
             .setAuditType(AuditTypeEnum.PASS)
