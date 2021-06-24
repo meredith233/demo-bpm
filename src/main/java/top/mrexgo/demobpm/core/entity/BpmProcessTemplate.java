@@ -36,7 +36,7 @@ public class BpmProcessTemplate {
     /**
      * 流程类型
      */
-    @Indexed
+    @Indexed(unique = true)
     private Integer processType;
 
     /**
