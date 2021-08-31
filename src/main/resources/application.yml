@@ -6,4 +6,4 @@ spring:
   # 数据源配置
   data:
     mongodb:
-      uri: mongodb://localhost:27017/bpm
+      uri: mongodb://root:123456@localhost:27017/bpm?authSource=admin

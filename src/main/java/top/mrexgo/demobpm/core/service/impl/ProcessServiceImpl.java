@@ -17,7 +17,9 @@ import top.mrexgo.demobpm.core.service.ProcessService;
 import top.mrexgo.demobpm.persistent.dao.ProcessMongoDAO;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 /**
  * @author liangjuhong
@@ -117,22 +119,29 @@ public class ProcessServiceImpl implements ProcessService {
     }
 
     private void findAuditNodes(BpmProcessNode node, List<BpmProcessNode> auditNodes) {
-        switch (node.getNodeType()) {
-            case SERIAL:
-            case PARALLEL:
-            case COUNTERSIGN:
-                for (int i = 0; i < node.getNodes().size(); i++) {
-                    BpmProcessNode now = node.getNodes().get(i);
-                    if (NodeStatusEnum.READY.equals(now.getNodeStatus()) || NodeStatusEnum.WAITING.equals(now.getNodeStatus())) {
-                        findAuditNodes(now, auditNodes);
+        Queue<BpmProcessNode> queue = new LinkedList<>();
+        queue.add(node);
+
+        while (!queue.isEmpty()) {
+            BpmProcessNode current = queue.poll();
+
+            switch (current.getNodeType()) {
+                case SERIAL:
+                case PARALLEL:
+                case COUNTERSIGN:
+                    for (int i = 0; i < current.getNodes().size(); i++) {
+                        BpmProcessNode now = current.getNodes().get(i);
+                        if (NodeStatusEnum.READY.equals(now.getNodeStatus()) || NodeStatusEnum.WAITING.equals(now.getNodeStatus())) {
+                            queue.add(now);
+                        }
                     }
-                }
-                break;
-            case CONDITION:
-            case NORMAL:
-                auditNodes.add(node);
-                break;
-            default:
+                    break;
+                case CONDITION:
+                case NORMAL:
+                    auditNodes.add(current);
+                    break;
+                default:
+            }
         }
     }
 
