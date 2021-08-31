@@ -7,17 +7,3 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017/bpm
-
-
-# MyBatis Plus 相关配置
-mybatis-plus:
-  configuration:
-    default-enum-type-handler: com.baomidou.mybatisplus.extension.handlers.MybatisEnumTypeHandler
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-  mapper-locations: classpath*:/mapper/*Mapper.xml,classpath*:/mapper/**/*Mapper.xml
-  global-config:
-    banner: false
-    db-config:
-      id-type: assign_id
-      logic-delete-value: 1
-      logic-not-delete-value: 0
